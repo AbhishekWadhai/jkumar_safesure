@@ -1,0 +1,54 @@
+[
+  {
+    "moduleName": "workpermitdaily",
+    "type": "regularList",
+
+    "tileTitle1": "remarks",
+    "tileTitle2": "createdby",
+    "tileTitle3": "date"
+  },
+  {
+    "moduleName": "workpermit",
+    "type": "tabBased",
+    "tabs": ["All", "Pending", "Verified", "Approved"],
+    "tileTitle1": "remarks",
+    "tileTitle2": "createdby",
+    "tileTitle3": "date"
+  },
+  {
+    "moduleName": "meeting",
+    "type": "regularList",
+    "tileTitle1": "typeOfTopic",
+    "tileTitle2": "attendeesNos",
+    "tileTitle3": "date"
+  },
+  {
+    "moduleName": "induction",
+    "type": "regularList",
+    "tileTitle1": "typeOfTopic",
+    "tileTitle2": "attendeesNos",
+    "tileTitle3": "date"
+  },
+  {
+    "moduleName": "specific",
+    "type": "regularList",
+    "tileTitle1": "typeOfTopic",
+    "tileTitle2": "attendeesNos",
+    "tileTitle3": "date"
+  },
+  {
+    "moduleName": "safetyreport",
+    "type": "regularList",
+    "tileTitle1": "createdAt",
+    "tileTitle2": "project",
+    "tileTitle3": ""
+  },
+  {
+    "moduleName": "uauc",
+    "type": "tabBased",
+    "tabs": ["All", "Open", "Closed"],
+    "tileTitle1": "observation",
+    "tileTitle2": "area",
+    "tileTitle3": "date"
+  }
+]
