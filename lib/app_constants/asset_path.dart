@@ -14,4 +14,7 @@ class Assets {
   static const String cardBg = "lib/assets/card_background.jpg";
   static const String xls = "lib/assets/xls.png";
   static const String calendar = "lib/assets/calendar.png";
+  static const String incident = "lib/assets/incident-report.png";
+  static const String noData = "lib/assets/no_data_image.png";
+  static const String formats = "lib/assets/formats.png";
 }

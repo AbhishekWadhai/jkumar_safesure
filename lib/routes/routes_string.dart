@@ -4,6 +4,7 @@ class Routes {
   static const userDetailsDataPage = "/serDetailsDataPage";
   static const workPermitPage = "/workPermitPage";
   static const safetyReportPage = "/safetyReportPage";
+  static const reportPage = "/reportPage";
   static const safetyCheckPage = "/safetyCheckPage";
   static const safetyInductionPage = "/safetyInductionPage";
   static const safetyTraining = "/safetyTraining";

@@ -3,7 +3,7 @@ final Map<String, String> translationMap = {
   "meetings": "Meetings",
   "specific": "Specific Training",
   "induction": "Safety Induction",
-  "uauc": "UA & UC",
+  "uauc": "Observation",
   "safetyreport": "Safety Report",
   "userId": "User Id",
   "name": "Name",
@@ -44,7 +44,8 @@ final Map<String, String> translationMap = {
   "tradeTypes": "Trade Type",
   "meeting": "TBT Meeting",
   "project": "",
-  "workpermitdaily": "Work Permit Daily"
+  "workpermitdaily": "Weekly Work Permit",
+  "incident": "Incident Reporting"
 
   // Add more key-value pairs as needed
 };
@@ -77,5 +78,11 @@ final Map<String, dynamic> keysForMap = {
   "tradeTypes": "tradeTypes",
   "observer": "name",
   "hazards": "hazards",
-  "attendeesName": "name"
+  "attendeesName": "name",
+  "projectName": "projectName",
+  "severity": "severity",
+  "incidentReportedBy": "name",
+  "nameOfProjectManager": "name",
+  "nameOfWorkAreaStaff": "name",
+  "_escalationHistory": "at"
 };

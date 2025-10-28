@@ -5,6 +5,7 @@ import 'package:sure_safe/app_constants/colors.dart';
 import 'package:sure_safe/controllers/home_controller.dart';
 import 'package:sure_safe/views/dashboard_view.dart';
 import 'package:sure_safe/views/home_page/home_view.dart';
+import 'package:sure_safe/views/notification_page.dart';
 
 class HomePage extends StatelessWidget {
   final HomeController controller = Get.put(HomeController());
@@ -16,7 +17,7 @@ class HomePage extends StatelessWidget {
       DashboardView(),
 
       HomeView(controller: controller),
-      //NotificationPage()
+      NotificationPage(),
       Container()
     ];
     return WillPopScope(

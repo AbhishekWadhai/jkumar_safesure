@@ -217,7 +217,7 @@ class SubFormController extends GetxController {
   Future<void> loadJsonFromAssets() async {
     try {
       final String response =
-          await rootBundle.loadString('assets/json/form.json');
+          await rootBundle.loadString('lib/assets/json/form.json');
       final data = await json.decode(response) as List<dynamic>;
       formResponse.value = data
           .map<ResponseForm>((element) => ResponseForm.fromJson(element))

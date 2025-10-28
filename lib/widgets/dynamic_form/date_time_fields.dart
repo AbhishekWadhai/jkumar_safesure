@@ -27,35 +27,39 @@ Widget myDatePicker(
       ),
       const SizedBox(height: 10),
       TextFormField(
+        controller: dateController,
+        readOnly: true, // <- always true, no keyboard ever
         validator: (value) {
           if (!isEditable) return null; // Skip validation for read-only fields
-          return controller
-              .validateTextField(value); // Validate editable fields
+          return controller.validateTextField(value);
         },
-        controller: dateController,
-        readOnly:
-            !isEditable, // Make the TextField read-only based on isEditable
-        decoration: kTextFieldDecoration("Select Date",
-            suffixIcon: Icon(Icons.calendar_month_rounded)),
-        onTap: isEditable // Only show date picker if editable
+        decoration: kTextFieldDecoration(
+          "Select Date",
+          suffixIcon: const Icon(Icons.calendar_month_rounded),
+        ),
+        onTap: isEditable
             ? () async {
                 DateTime? pickedDate = await showDatePicker(
                   context: Get.context!,
                   initialDate: DateTime.now(),
-                  firstDate: DateTime.now().subtract(Duration(days: 7)),
+                  firstDate: DateTime.now().subtract(const Duration(days: 7)),
                   lastDate: DateTime.now(),
                 );
                 if (pickedDate != null) {
                   String formattedDate =
-                      "${pickedDate.year}-${pickedDate.month}-${pickedDate.day}"; // Format the date
-                  dateController.text = pickedDate
-                      .toString(); // Update the TextField with the selected date
-                  controller.updateFormData(field.headers,
-                      pickedDate.toString()); // Update the form data
+                      "${pickedDate.year}-${pickedDate.month}-${pickedDate.day}";
+
+                  dateController.text = DateFormat('d-M-yyyy')
+                      .format(pickedDate); // show formatted
+                  controller.updateFormData(
+                    field.headers,
+                    DateFormat('yyyy-MM-dd').format(pickedDate), // save in ISO
+                  );
                 }
               }
-            : null, // Disable onTap if not editable
+            : null, // disable tap if not editable
       ),
+
       // Display the current date if not editable
       if (!isEditable)
         Padding(
@@ -91,8 +95,7 @@ Widget myTimePicker(
               .validateTextField(value); // Validate editable fields
         },
         controller: timeController,
-        readOnly:
-            !isEditable, // Make the TextField read-only based on isEditable
+        readOnly: true, // Make the TextField read-only based on isEditable
         decoration: kTextFieldDecoration("Select Time",
             suffixIcon: Icon(Icons.access_time_filled_sharp)),
         onTap: isEditable // Only show time picker if editable

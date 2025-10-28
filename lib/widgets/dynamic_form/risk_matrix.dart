@@ -7,6 +7,7 @@ import '../helper_widgets/risk_color_switch.dart';
 
 Widget buildRiskMatrix(
     PageField field, DynamicFormController controller, bool isEdit) {
+  print("-----------${controller.formData[field.headers]}---risk");
   final fieldData = controller.formData[field.headers];
   controller.riskLevel.value =
       fieldData != null ? fieldData[field.key] : "No Values Selected";
@@ -108,20 +109,45 @@ Widget buildRiskMatrix(
       const SizedBox(height: 20),
       Obx(() => Column(
             children: [
-              Card(
-                color: Colors.white,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Text(
-                    'Risk Level: ${controller.riskLevel.value}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: getRiskColor(controller.riskLevel.value),
+              SizedBox(
+                width: double.infinity,
+                child: Card(
+                  color: Colors.white,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Risk Level: ${controller.riskLevel.value}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: getRiskColor(controller.riskLevel.value),
+                          ),
+                        ),
+                        if (controller.timelineHours.value > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6.0),
+                            child: Text(
+                              "Alert Window: ${controller.timelineHours.value} hour(s)",
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        if (controller.deadlineText.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              "Complete action by: ${controller.deadlineText.value}",
+                              style: const TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),

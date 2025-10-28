@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class TextFormatters {
   String toTitleCase(String input) {
     RegExp exp = RegExp(r'(?<=[a-z])[A-Z]');
@@ -20,4 +22,15 @@ class TextFormatters {
     }
     return camelCaseString;
   }
+}
+
+void printLargeJson(dynamic jsonData) {
+  const encoder = JsonEncoder.withIndent('  ');
+  final prettyJson = encoder.convert(jsonData);
+
+  // Split into chunks of 800 characters
+  final pattern = RegExp('.{1,800}');
+  pattern.allMatches(prettyJson).forEach((match) {
+    print(match.group(0));
+  });
 }

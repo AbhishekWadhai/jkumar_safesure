@@ -2,7 +2,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sure_safe/app_constants/colors.dart';
+import 'package:sure_safe/helpers/app_keys.dart';
 import 'package:sure_safe/routes/routes.dart';
 import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/connection_service.dart';
@@ -20,7 +22,7 @@ Future<void> main() async {
   try {
     // AppEnvironment.setupEnv(Environment.dev);
     // print('Environment setup done');
-    await loadDropdownData();
+
     // Initialize Firebase
     await Firebase.initializeApp();
     print('Firebase initialized');
@@ -34,9 +36,11 @@ Future<void> main() async {
     print('Background message handler set');
 
     // Check if the user is logged in
+    print("problem token handeling");
     bool isLoggedIn = await isTokenValid();
-    print('Token valid: $isLoggedIn');
 
+    print('Token valid: $isLoggedIn');
+    await loadDropdownData();
     // Run the app
     runApp(MyApp(isLoggedIn: isLoggedIn));
   } catch (e) {
@@ -49,10 +53,11 @@ Future<void> main() async {
       await requestEssentialPermissions();
 // await loadDropdownData();
       bool isLoggedIn = await isTokenValid();
+      await loadDropdownData();
       runApp(MyApp(isLoggedIn: isLoggedIn));
     } catch (innerError) {
       print('Error in fallback logic: $innerError');
-      runApp(const MyApp(isLoggedIn: false));
+      runApp(MyApp(isLoggedIn: false));
     }
   }
 }
@@ -75,13 +80,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
-  const MyApp({super.key, required this.isLoggedIn});
+  MyApp({super.key, required this.isLoggedIn});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     Get.put(ConnectivityService());
     return GetMaterialApp(
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         appBarTheme: AppBarTheme(
             backgroundColor: AppColors.appMainDark,

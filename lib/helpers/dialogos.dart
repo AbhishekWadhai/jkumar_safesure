@@ -55,3 +55,34 @@ void showSuccessDialog({
     barrierDismissible: false,
   );
 }
+
+/// A reusable method to show confirmation dialog
+Future<bool> showConfirmationDialog({
+  required BuildContext context,
+  String title = "Confirmation",
+  String content = "Are you sure?",
+  String confirmText = "Yes",
+  String cancelText = "No",
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false, // User must tap a button
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(cancelText),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(confirmText),
+          ),
+        ],
+      );
+    },
+  );
+  return result ?? false; // If dismissed, return false
+}

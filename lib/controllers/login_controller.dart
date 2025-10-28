@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:sure_safe/app_constants/app_strings.dart';
 import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/api_services.dart';
+import 'package:sure_safe/services/check_for_update.dart';
 import 'package:sure_safe/services/jwt_service.dart';
 import 'package:sure_safe/services/shared_preferences.dart';
 
@@ -15,11 +16,13 @@ class LoginController extends GetxController {
   String fcmToken = Strings.fcmToken;
   var isLoading = false.obs;
   var isPasswordHidden = true.obs;
+  String version = "";
 
-  onInit() {
+  onInit() async {
     super.onInit();
     print("Here Checking connectivity=====================${fcmToken}");
     // ConnectivityService.checkAndShowOfflineSnackbar();
+    version = await CheckForUpdate().getCleanVersion();
   }
 
   String? validateUsername(String? value) {
@@ -39,19 +42,29 @@ class LoginController extends GetxController {
   void handleLogin() async {
     if (formKey.currentState?.validate() ?? false) {
       isLoading.value = true;
+      print("[[[[[[[[[[[[[[[[[[[[[[[[[$version]]]]]]]]]]]]]]]]]]]]]]]]]");
       // If the form is valid, display a snackbar and navigate
       try {
         final a = await ApiService().postRequest("user/login", {
           "emailId": usernameController.text,
           "password": passwordController.text,
+          "appVersion": version,
           "fcmToken": fcmToken
         });
+        print(a);
         if (a != null) {
-          await SharedPrefService().saveString("token", a["token"]);
-          await SharedPrefService()
-              .saveString("userDetails", jsonEncode(a["user"]));
-          await isTokenValid();
-          Get.offAllNamed(Routes.homePage);
+          print(a['downloadLink']);
+          if (a['downloadLink'] != null) {
+            Get.snackbar("Login Failed", "Update your Application to Continue",
+                backgroundColor: Colors.red, colorText: Colors.white);
+            CheckForUpdate().showUpdateDialog(a["downloadLink"]);
+          } else {
+            await SharedPrefService().saveString("token", a["token"]);
+            await SharedPrefService()
+                .saveString("userDetails", jsonEncode(a["user"]));
+            await isTokenValid();
+            Get.offAllNamed(Routes.homePage);
+          }
         } else {
           Get.snackbar("Login Failed", "Enter valid credentials",
               backgroundColor: Colors.red, colorText: Colors.white);

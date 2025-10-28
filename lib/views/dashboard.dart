@@ -213,7 +213,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             "$selectedFilter observations",
                             style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.greenAccent,
+                                color: Colors.lightBlue.shade100,
                                 fontWeight: FontWeight.bold),
                           ),
                           Spacer(),

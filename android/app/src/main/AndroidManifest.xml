@@ -7,7 +7,7 @@
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <application
-        android:label="Sure Safe"
+        android:label="Safety Sure J Kumar"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -38,6 +38,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+            <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC33a8roXjezZ_hhwBpu8aNgXomaN8LBms" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

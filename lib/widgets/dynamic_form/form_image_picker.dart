@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
-import 'package:sure_safe/views/image_view_page.dart';
-
+import 'package:sure_safe/views/additional_views/image_view_page.dart';
 
 Widget buildImagePickerField(
     PageField field, DynamicFormController controller, bool isEditable) {
@@ -75,7 +74,15 @@ Widget buildImagePickerField(
             const SizedBox(height: 10),
             if (imageUrl is String && imageUrl.isNotEmpty) ...[
               GestureDetector(
-                onTap: () => Get.to(ImageViewPage(imageUrl: imageUrl)),
+                // onTap: () => Get.to(ImageViewPage(imageUrl: imageUrl)),
+                onTap: () {
+                  Get.bottomSheet(
+                    SizedBox(
+                        height: 700, child: ImageViewPage(imageUrl: imageUrl)),
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                  );
+                },
                 child: imageUrl.startsWith('http')
                     ? Image.network(
                         imageUrl,

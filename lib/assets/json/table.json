@@ -20,5 +20,6 @@
   "safetyMeasuresTaken": "CheckPoints",
   "TbtGivenBy": "name",
   "instructionBy": "name",
-  "tradeTypes": "tradeTypes"
+  "tradeTypes": "tradeTypes",
+  "projectName": "projectName"
 }

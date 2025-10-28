@@ -1,12 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+//import 'package:image/image.dart' as img_pkg;
 import 'package:camera/camera.dart';
+
 import 'package:path/path.dart'; // For handling file paths
-import 'package:path_provider/path_provider.dart'; // To access temporary directories
+import 'package:path_provider/path_provider.dart';
+import 'package:sure_safe/helpers/app_keys.dart'; // To access temporary directories
 
 class CameraService with ChangeNotifier {
   late CameraController _controller;
@@ -222,3 +229,67 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
     super.dispose();
   }
 }
+
+Future<File?> renderWidgetToFileUsingNavigatorKey(Widget widget,
+    {double pixelRatio = 3.0}) async {
+  final navState = navigatorKey.currentState;
+  final overlay = navState?.overlay;
+  if (overlay == null) {
+    // Not ready yet — either app not mounted or navigatorKey not attached.
+    print('No overlay available (navigatorKey.currentState?.overlay == null)');
+    return null;
+  }
+
+  final key = GlobalKey();
+  final entry = OverlayEntry(
+    builder: (context) {
+      return Offstage(
+        offstage: false, // must not be true; we need it laid out & painted
+        child: Material(
+          type: MaterialType.transparency,
+          child: Center(
+            child: RepaintBoundary(
+              key: key,
+              child: widget,
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+
+  // Wait for at least one frame so the widget is built & painted.
+  // A small delay + endOfFrame tends to be robust.
+  await Future.delayed(const Duration(milliseconds: 50));
+  await WidgetsBinding.instance.endOfFrame;
+  await Future.delayed(const Duration(milliseconds: 50));
+
+  try {
+    final boundary =
+        key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    if (boundary == null) {
+      print('RenderRepaintBoundary not found');
+      return null;
+    }
+
+    final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+    final ByteData? byteData =
+        await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) return null;
+    final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+    final dir = await getTemporaryDirectory();
+    final file = File(
+        '${dir.path}/composed_${DateTime.now().millisecondsSinceEpoch}.png');
+    await file.writeAsBytes(pngBytes);
+    return file;
+  } catch (e, st) {
+    print('capture error: $e\n$st');
+    return null;
+  } finally {
+    entry.remove();
+  }
+}
+

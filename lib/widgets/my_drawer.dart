@@ -8,6 +8,7 @@ import 'package:sure_safe/app_constants/textstyles.dart';
 import 'package:sure_safe/helpers/sixed_boxes.dart';
 import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/shared_preferences.dart';
+import 'package:sure_safe/services/text_formatters.dart';
 import 'package:sure_safe/widgets/custom_alert_dialog.dart';
 
 class MyDrawer extends StatelessWidget {
@@ -19,11 +20,11 @@ class MyDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Drawer(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20), // Top-right corner radius
-          ),
-        ),
+        // shape: const RoundedRectangleBorder(
+        //   borderRadius: BorderRadius.only(
+        //     topLeft: Radius.circular(20), // Top-right corner radius
+        //   ),
+        // ),
         child: Column(
           children: [
             Container(
@@ -71,10 +72,11 @@ class MyDrawer extends StatelessWidget {
                         ),
                       ),
                     ),
+                    sb6,
                     const Text(
                       "SURE SAFE",
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -87,7 +89,7 @@ class MyDrawer extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "${Strings.userName},",
+                              TextFormatters().toTitleCase(Strings.userName),
                               style: TextStyles.appBarSubTextStyle,
                             ),
                             Row(

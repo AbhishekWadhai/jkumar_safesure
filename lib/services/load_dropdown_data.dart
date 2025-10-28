@@ -4,12 +4,13 @@ import 'package:sure_safe/services/api_services.dart';
 import 'package:sure_safe/services/shared_preferences.dart';
 
 Future<void> loadDropdownData() async {
+  print("----------------${Strings.endpointToList["project"]}------------------");
   List<String> endpoints = [
     "projects",
     "permitstype",
     "user",
     "topic",
-    "RiskRating",
+    "riskRating",
     "tools",
     "equipments",
     "machinetools",
@@ -40,6 +41,7 @@ Future<void> loadDropdownData() async {
 
     try {
       if (isOnline) {
+
         print("🟢 [$endpoint] Fetched ${parsedData.length} items from API");
 
         final List<dynamic> response = await ApiService().getRequest(endpoint);
@@ -97,7 +99,7 @@ Future<void> loadDropdownData() async {
 
         case "topic":
         case "equipments":
-        case "RiskRating":
+        case "riskRating":
         case "tools":
         case "machinetools":
         case "hazards":
@@ -147,7 +149,11 @@ Future<void> loadDropdownData() async {
           break;
 
         case "safetyreport":
-          Strings.safetyreport = parsedData;
+          Strings.safetyreport = parsedData
+              .where((e) =>
+                  e['project']['_id'] ==
+                  Strings.endpointToList['project']['_id'])
+              .toList();
 
           break;
       }

@@ -12,6 +12,7 @@ import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/formatters.dart';
 import 'package:sure_safe/views/dashboard.dart';
 import 'package:sure_safe/views/home_page/home_page.dart';
+import 'package:sure_safe/views/user_details.dart';
 import 'package:sure_safe/widgets/auto_move_slider.dart';
 import 'package:sure_safe/widgets/my_drawer.dart';
 
@@ -35,6 +36,7 @@ class HomeView extends StatelessWidget {
             colors: [
               AppColors.appMainDark,
               AppColors.appMainMid,
+              AppColors.appMainLight
             ],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
@@ -54,12 +56,12 @@ class HomeView extends StatelessWidget {
                             Scaffold.of(drawerContext).openEndDrawer();
                           },
                           child: SizedBox(
-                            width: 36,
-                            height: 36,
+                            width: 50,
+                            height: 50,
                             child: Padding(
                               padding: const EdgeInsets.all(1.0),
                               child: Image.asset(
-                                Assets.jKumarLogoBlackSquare,
+                                Assets.jKumarLogo,
                                 fit: BoxFit.contain,
                               ),
                             ),
@@ -69,7 +71,7 @@ class HomeView extends StatelessWidget {
                 ],
                 automaticallyImplyLeading: false,
                 scrolledUnderElevation: 0,
-                expandedHeight: 220,
+                expandedHeight: 320,
                 toolbarHeight: 120,
                 pinned: true,
                 flexibleSpace: AppBarContent(
@@ -156,8 +158,13 @@ class HomeView extends StatelessWidget {
                         ),
                       ),
                       Obx(
-                        () => AutoCarousel(
-                            selectedRange: controller.selectedRange.value),
+                        () => GestureDetector(
+                          onTap: () {
+                            Get.toNamed(Routes.userDetailsDataPage);
+                          },
+                          child: AutoCarousel(
+                              selectedRange: controller.selectedRange.value),
+                        ),
                       ),
                       sb6,
                       const Divider(color: Colors.black87),
@@ -184,7 +191,7 @@ class HomeView extends StatelessWidget {
                       Container(
                         height: 250,
                         decoration: BoxDecoration(
-                          color: Color(0xFF6DB5AE),
+                          color: Color(0xFFDA6C6C),
                           borderRadius: BorderRadius.all(Radius.circular(20)),
                         ),
                         child: DashboardPage(
@@ -207,7 +214,7 @@ class HomeView extends StatelessWidget {
       children: [
         MyGridQuick(
             image: Image.asset(Assets.calendar),
-            activity: "Daily Permit",
+            activity: "Weekly Permit",
             onTap: () async {
               if (Strings.permisssions.contains("Workpermit Creation")) {
                 var result = await Get.toNamed(
@@ -228,7 +235,7 @@ class HomeView extends StatelessWidget {
               if (Strings.permisssions.contains("Workpermit Creation")) {
                 var result = await Get.toNamed(
                   Routes.formPage,
-                  arguments: ['workpermitdaily', <String, dynamic>{}, false],
+                  arguments: ['workpermit', <String, dynamic>{}, false],
                 );
                 if (result == true) {
                   Get.snackbar("Work Permit Created Successfully", "");
@@ -344,6 +351,7 @@ class AppBarContent extends StatelessWidget {
                     colors: [
                       AppColors.appMainDark,
                       AppColors.appMainMid,
+                      AppColors.appMainLight
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -453,16 +461,18 @@ class AppBarContent extends StatelessWidget {
                               crossAxisSpacing:
                                   0.0, // Spacing between items horizontally
                               childAspectRatio:
-                                  0.85, // Adjusts the child width/height ratio
+                                  0.87, // Adjusts the child width/height ratio
                             ),
                             children: [
                               if (Strings.roleName == "Execution" ||
-                                  Strings.roleName == "Management" ||
-                                  Strings.roleName == "Project Manager" ||
-                                  Strings.roleName == "Admin" &&
-                                      Strings.endpointToList['project']
-                                              ?["workpermitAllow"] ==
-                                          "yes")
+                                      Strings.roleName == "Management" ||
+                                      Strings.roleName == "Project Manager" ||
+                                      Strings.roleName == "Admin"
+                                  // &&
+                                  //     Strings.endpointToList['project']
+                                  //             ?["workpermitAllow"] ==
+                                  //         "yes"
+                                  )
                                 MyGrid(
                                   avatarColor: Colors.red[100]!,
                                   image: Image.asset(Assets.workPermit),
@@ -472,6 +482,33 @@ class AppBarContent extends StatelessWidget {
                                         arguments: ["workpermit"]);
                                   },
                                 ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.tbtMeeting),
+                                activity: "TBT Meeting",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["meeting"]);
+                                },
+                              ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.safetyInduction),
+                                activity: "Induction",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["induction"]);
+                                },
+                              ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.specificTraining),
+                                activity: "Specific Training",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["specific"]);
+                                },
+                              ),
                               if (Strings.roleName == "Execution" ||
                                   Strings.roleName == "Management" ||
                                   Strings.roleName == "Project Manager" ||
@@ -482,52 +519,48 @@ class AppBarContent extends StatelessWidget {
                                 MyGrid(
                                   avatarColor: Colors.red[100]!,
                                   image: Image.asset(Assets.calendar),
-                                  activity: "Daily Permit",
+                                  activity: "Weekly Permit",
                                   onTap: () {
                                     Get.toNamed(Routes.modulePage,
                                         arguments: ["workpermitdaily"]);
                                   },
                                 ),
-                              if (Strings.roleName == "Safety" ||
-                                  Strings.roleName == "Management" ||
-                                  Strings.roleName == "Project Manager" ||
-                                  Strings.roleName == "Admin")
-                                MyGrid(
-                                  avatarColor: Colors.blue[100]!,
-                                  image: Image.asset(Assets.training),
-                                  activity: Strings.training,
-                                  onTap: () {
-                                    Get.toNamed(Routes.safetyTraining);
-                                  },
-                                ),
-                              Obx(() => MyGrid(
-                                    avatarColor: Colors.green[100]!,
-                                    image: Image.asset(Assets.uauc),
-                                    activity: Strings.uaucs,
-                                    onTap: () {
-                                      Get.toNamed(Routes.modulePage,
-                                          arguments: ["uauc"]);
-                                    },
-                                    showBadge:
-                                        controller.hasPendingActions.value,
-                                  )),
                               MyGrid(
-                                avatarColor: Colors.orange[100]!,
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.uauc),
+                                activity: "Observations",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["uauc"]);
+                                },
+                              ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.incident),
+                                activity: "Incident Report",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["incident"]);
+                                },
+                              ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
                                 image: Image.asset(Assets.safetyReport),
-                                activity: Strings.reporting,
+                                activity: "Safety Report",
                                 onTap: () {
                                   Get.toNamed(Routes.modulePage,
                                       arguments: ["safetyreport"]);
                                 },
                               ),
-                              // MyGrid(
-                              //   avatarColor: Colors.orange[100]!,
-                              //   image: Image.asset(Assets.safetyReport),
-                              //   activity: "Checklist",
-                              //   onTap: () {
-                              //     Get.toNamed(Routes.actionView);
-                              //   },
-                              // ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.formats),
+                                activity: "Formats",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["format"]);
+                                },
+                              ),
                             ],
                           ),
                         ],
@@ -563,10 +596,6 @@ class AppBarContent extends StatelessWidget {
               subtitle: Text(project['siteLocation'] ?? ''),
               onTap: () {
                 controller.changeProject(project);
-                // Strings.endpointToList["project"] = project;
-                // Get.offAllNamed(Routes.homePage);
-                // print(Strings.endpointToList["project"]);
-                // //Get.back();
               },
             );
           },

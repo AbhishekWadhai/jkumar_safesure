@@ -77,7 +77,7 @@ class Strings {
     "permission": permisssions,
     "userid": userId,
     "topic": topics,
-    "RiskRating": riskRatings,
+    "riskRating": riskRatings,
     "tools": tools,
     "equipments": equipments,
     "hazards": hazards,

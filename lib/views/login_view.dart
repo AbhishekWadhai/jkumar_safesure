@@ -32,7 +32,7 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 20.0),
                     const Text(
-                      "SURE SAFE",
+                      "SAFETY SURE",
                       style:
                           TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                     ),

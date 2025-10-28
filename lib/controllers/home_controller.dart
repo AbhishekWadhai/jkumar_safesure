@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sure_safe/app_constants/app_strings.dart';
 import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/api_services.dart';
+import 'package:sure_safe/services/load_dropdown_data.dart';
 import 'package:sure_safe/widgets/gradient_button.dart';
 import 'package:sure_safe/widgets/progress_indicators.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -67,7 +68,7 @@ class HomeController extends GetxController {
     );
 
     // Load dropdown data
-    //await loadDropdownData();
+    await loadDropdownData();
 
     // Close loader
     Get.back();

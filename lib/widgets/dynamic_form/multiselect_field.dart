@@ -56,6 +56,7 @@ Widget buildMultiselectField(PageField field, DynamicFormController controller,
               child: AbsorbPointer(
                 absorbing: !isEditable,
                 child: MultiSelectDialogField<String>(
+                  searchable: true,
                   validator: (value) =>
                       isEditable ? controller.validateMultiSelect(value) : null,
                   dialogHeight: 300,

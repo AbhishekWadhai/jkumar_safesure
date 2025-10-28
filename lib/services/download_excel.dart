@@ -43,7 +43,7 @@ class DownloadController extends GetxController {
     final to = DateFormat('yyyy-MM-dd').format(endDate.value!);
 
     final fullEndpoint =
-        "$endpoint/project-excel?project=$projectId&from=$from&to=$to";
+        "$endpoint/export-excel?project=$projectId&from=$from&to=$to";
 
     try {
       print("Downloading from: $fullEndpoint");

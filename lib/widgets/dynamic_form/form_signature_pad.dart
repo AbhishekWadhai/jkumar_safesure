@@ -1,24 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:signature/signature.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
 
-Column buildSignature(
+Widget buildSignature(
     PageField field, DynamicFormController controller, bool isEdit) {
-  bool isOnline = controller.isOnline.value;
-  String? signatureUrl = controller.formData[field.headers];
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        field.title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
+  return _SignatureField(
+    field: field,
+    controller: controller,
+    isEdit: isEdit,
+  );
+}
 
-      isEdit
-          ? (signatureUrl != null && signatureUrl.isNotEmpty
+class _SignatureField extends StatefulWidget {
+  final PageField field;
+  final DynamicFormController controller;
+  final bool isEdit;
+
+  const _SignatureField({
+    required this.field,
+    required this.controller,
+    required this.isEdit,
+  });
+
+  @override
+  State<_SignatureField> createState() => _SignatureFieldState();
+}
+
+class _SignatureFieldState extends State<_SignatureField> {
+  bool showPad = false; // local toggle
+
+  @override
+  Widget build(BuildContext context) {
+    bool isOnline = widget.controller.isOnline.value;
+    String? signatureUrl = widget.controller.formData[widget.field.headers];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.field.title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+
+        // Either image or pad
+        if (widget.isEdit && !showPad)
+          (signatureUrl != null && signatureUrl.isNotEmpty
               ? Image.network(
                   signatureUrl,
                   height: 200,
@@ -26,52 +54,68 @@ Column buildSignature(
                   fit: BoxFit.cover,
                 )
               : const Text("No signature available."))
-          : Signature(
-              controller: controller.getSignatureController(field.headers),
-              height: 200,
-              backgroundColor: Colors.grey[200]!,
-            ),
+        else
+          Signature(
+            controller:
+                widget.controller.getSignatureController(widget.field.headers),
+            height: 200,
+            backgroundColor: Colors.grey[200]!,
+          ),
 
-      if (!isEdit)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton(
               onPressed: () {
-                controller.signatureControllers[field.headers]?.clear();
+                if (widget.isEdit && !showPad) {
+                  // Switch from image → pad
+                  setState(() {
+                    showPad = true;
+                  });
+                } else {
+                  // Clear pad
+                  widget.controller.signatureControllers[widget.field.headers]
+                      ?.clear();
+                }
               },
-              child: const Text("Clear"),
+              child: Text(widget.isEdit && !showPad ? "Re-sign" : "Clear"),
             ),
             ElevatedButton(
               onPressed: () async {
                 final sigController =
-                    controller.signatureControllers[field.headers];
+                    widget.controller.signatureControllers[widget.field.headers];
                 if (sigController == null) return;
 
                 if (!isOnline) {
-                  // 🌐 Store locally
                   final bytes = await sigController.toPngBytes();
                   if (bytes != null) {
-                    final localPath = await controller.saveSignatureLocally(
-                        field.headers, bytes);
-                    controller.updateFormData(field.headers, localPath);
-                    controller.imageErrors[field.headers] = null;
+                    final localPath = await widget.controller
+                        .saveSignatureLocally(widget.field.headers, bytes);
+                    widget.controller
+                        .updateFormData(widget.field.headers, localPath);
+                    widget.controller.imageErrors[widget.field.headers] = null;
 
-                    // Optional: mark as offline signature for future sync
-                    controller.queueOfflineSignatureUpload(
-                        field.headers, localPath);
+                    widget.controller.queueOfflineSignatureUpload(
+                        widget.field.headers, localPath);
                   } else {
-                    controller.imageErrors[field.headers] =
+                    widget.controller.imageErrors[widget.field.headers] =
                         "Could not capture signature.";
                   }
                 } else {
-                  // 🌍 Upload online
-                  String? imageUrl = await controller.saveSignature(
-                      field.headers, field.endpoint ?? "");
+                  String? imageUrl = await widget.controller.saveSignature(
+                      widget.field.headers, widget.field.endpoint ?? "");
                   if (imageUrl != null) {
-                    controller.updateFormData(field.headers, imageUrl);
-                    controller.imageErrors[field.headers] = null;
+                    widget.controller
+                        .updateFormData(widget.field.headers, imageUrl);
+                    widget.controller.imageErrors[widget.field.headers] = null;
                   }
+                }
+
+                if (widget.isEdit) {
+                  // After saving in edit, return to image view
+                  setState(() {
+                    showPad = false;
+                  });
                 }
               },
               child: const Text("Save"),
@@ -79,19 +123,20 @@ Column buildSignature(
           ],
         ),
 
-      // Error message display
-      Obx(() {
-        final error = controller.imageErrors[field.headers];
-        return error != null
-            ? Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  error,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              )
-            : const SizedBox.shrink();
-      }),
-    ],
-  );
+        // Error message display
+        Obx(() {
+          final error = widget.controller.imageErrors[widget.field.headers];
+          return error != null
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    error,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                )
+              : const SizedBox.shrink();
+        }),
+      ],
+    );
+  }
 }

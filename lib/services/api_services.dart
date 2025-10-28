@@ -8,7 +8,7 @@ import 'package:path/path.dart';
 
 class ApiService {
   static String baseUrl =
-      "https://jkumar.vercel.app"; // Replace with your base URL
+      "https://jkumarapi.axiomos.in"; // Replace with your base URL
 
   // Common method for making GET requests to download file
   Future<Uint8List> getFileRequest(String endpoint) async {
@@ -19,9 +19,11 @@ class ApiService {
       if (response.statusCode == 200) {
         return response.bodyBytes; // ✅ This is binary-safe
       } else {
+        print(response.statusCode);
         throw Exception('Failed to download file');
       }
     } catch (e) {
+      print("Exception thrown----$e");
       throw Exception('Error: $e');
     }
   }
@@ -45,7 +47,7 @@ class ApiService {
   // Common method for making POST requests
   Future<dynamic> postRequest(String endpoint, dynamic data) async {
     final url = Uri.parse('$baseUrl/$endpoint');
-    print(url);
+
     try {
       final response = await http.post(
         url,
@@ -58,6 +60,10 @@ class ApiService {
         print("API post successfully: ${response.statusCode}");
         return response.statusCode;
       } else if (response.statusCode == 200) {
+        print("API post successfully");
+        //print(jsonEncode(response.body));
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 426) {
         print("API post successfully");
         //print(jsonEncode(response.body));
         return jsonDecode(response.body);

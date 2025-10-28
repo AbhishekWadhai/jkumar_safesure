@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -22,12 +23,17 @@ import 'package:sure_safe/services/image_service.dart';
 import 'package:sure_safe/services/load_dropdown_data.dart';
 import 'package:sure_safe/services/location_service.dart';
 import 'package:sure_safe/services/notification_service/notification_handler.dart';
+import 'package:sure_safe/services/text_formatters.dart';
 import 'package:sure_safe/views/saved_form_data/saved_form_data_controller.dart';
 import 'package:sure_safe/widgets/custom_alert_dialog.dart';
 import 'package:sure_safe/widgets/progress_indicators.dart';
 import 'package:uuid/uuid.dart';
 
 class DynamicFormController extends GetxController {
+  //var riskLevel = ''.obs;
+  var deadlineText = ''.obs;
+  var timelineHours = 0.obs;
+
   RxBool isOnline = false.obs;
   String? formId;
   RxInt severity = 1.obs;
@@ -393,6 +399,8 @@ class DynamicFormController extends GetxController {
     }
   }
 
+// Helper: composes text, border, and map inset and returns a saved File
+
   Future<String?> saveSignature(
     String key,
     String endpoint,
@@ -412,8 +420,10 @@ class DynamicFormController extends GetxController {
         // Convert the signature to bytes
         final bytes = await controller.toPngBytes();
         final directory = await getApplicationDocumentsDirectory();
-        imageFile = File('${directory.path}/signature.png');
-
+        imageFile = File(
+            '${directory.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
+        print(
+            "----------${directory.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png----------------");
         // Save the bytes to the file
         await imageFile.writeAsBytes(bytes!);
 
@@ -588,7 +598,8 @@ class DynamicFormController extends GetxController {
     await updateFormDataFromControllers();
     formData["customFields"] = customFields;
     bool isValid = true;
-
+    print("111111111111111111111111111111111111111111111111111111111");
+    printLargeJson(formData);
     for (var field in pageFields) {
       switch (field.type) {
         case 'imagepicker':
@@ -676,7 +687,7 @@ class DynamicFormController extends GetxController {
         showSuccessDialog(
           title: "Successful",
           message: "Data submitted successfully, press OK to continue",
-          onOkPressed: sendNotification(endpoint, false),
+          //onOkPressed: null,
         );
       }
     } catch (e) {
@@ -733,9 +744,10 @@ class DynamicFormController extends GetxController {
       if (response == 200 || response == 201) {
         // Show success dialog
         showSuccessDialog(
-            title: "Update Successful",
-            message: "Data updated successfully, press OK to continue",
-            onOkPressed: sendNotification(endpoint, true));
+          title: "Update Successful",
+          message: "Data updated successfully, press OK to continue",
+          //onOkPressed: () => null,
+        );
       } else {
         throw Exception("Unexpected response code: $response");
       }
@@ -865,73 +877,15 @@ class DynamicFormController extends GetxController {
   }
 
   updateFormDataFromControllers() async {
+    print(textControllers);
     textControllers.forEach((key, controller) {
       formData[key] = controller.text;
     });
   }
 
   // Validations for form fields------------------------------------------//
-  sendNotification(String source, bool isUpdate) {
-    switch (source) {
-      case "uauc":
-        isUpdate
-            ? NotificationHandler().sendNotification(notifications: [
-                {
-                  "userId": formData["createdby"],
-                  "title": "Update UAUC",
-                  "message": "An Update made in UAUC, Check It out",
-                  "source": "uauc"
-                }
-              ])
-            : NotificationHandler().sendNotification(notifications: [
-                {
-                  "userId": formData["assignedTo"],
-                  "title": "UAUC REPORTED",
-                  "message":
-                      "UAUC Incident Assigned, Take Necessary actions ASAP ",
-                  "source": "uauc"
-                }
-              ]);
-        break;
-      case "workpermit":
-        if (isUpdate) {
-          if (true) {
-            print(
-                "----------------sending update notification ${formData["createdby"]}");
-            NotificationHandler().sendNotification(notifications: [
-              {
-                "userId": formData["createdby"]["_id"],
-                "title": "Work Permit Verified",
-                "message": "An Update made in Work Permit, Check It out",
-                "source": "workpermit",
-              }
-            ]);
-          } else {
-            print(
-                "----------------sending failed in edit notification ${formData["verifiedDone"]}");
-          }
-        } else {
-          // Map assignedTo list into the notification format
-          List<Map<String, String>> notifications =
-              (formData["verifiedBy"] as List<String>).map((String userId) {
-            return {
-              "userId": userId,
-              "title": "Work Permit Verification",
-              "message": "New Work Permit created, Please verify it",
-              "source": "workpermit",
-            };
-          }).toList();
-
-// Pass the entire list to sendNotification
-          NotificationHandler().sendNotification(notifications: notifications);
-        }
-        break;
-    }
-  }
 
   void calculateRiskLevel() {
-    print("------------------------------------------------------------------");
-    print(severity.value * likelihood.value);
     final score = severity.value * likelihood.value;
     if (score <= 3) {
       riskLevel.value = 'Low';
@@ -942,44 +896,28 @@ class DynamicFormController extends GetxController {
     } else {
       riskLevel.value = 'Critical';
     }
-    final matchedValue = Strings.endpointToList["RiskRating"].firstWhere((e) {
-      print('Comparing: ${e['severity']} with ${riskLevel.value}');
-      return e['severity'] == riskLevel.value;
-    }, orElse: () => null);
+
+    final matchedValue = Strings.endpointToList["riskRating"].firstWhere(
+      (e) => e['severity'] == riskLevel.value,
+      orElse: () => null,
+    );
 
     if (matchedValue != null) {
-      print(formData['riskValue']);
-      formData['riskValue'] = matchedValue['_id'];
+      formData['riskValue'] = matchedValue;
 
-      // Parse the alert timeline (in hours)
-      final int timelineHours =
-          int.tryParse(matchedValue['alertTimeline'] ?? '0') ?? 0;
+      // Parse alert timeline (in hours)
+      final int hours = int.tryParse(matchedValue['alertTimeline'] ?? '0') ?? 0;
+      timelineHours.value = hours;
 
       // Calculate deadline
-      final DateTime deadline =
-          DateTime.now().add(Duration(hours: timelineHours));
+      final DateTime deadline = DateTime.now().add(Duration(hours: hours));
 
-      // Format deadline nicely
-      final String formattedDeadline =
-          "${deadline.day.toString().padLeft(2, '0')}/"
+      // Format deadline
+      deadlineText.value = "${deadline.day.toString().padLeft(2, '0')}/"
           "${deadline.month.toString().padLeft(2, '0')}/"
           "${deadline.year} at ${deadline.hour.toString().padLeft(2, '0')}:"
           "${deadline.minute.toString().padLeft(2, '0')}";
-
-      // Show the dialog
-      Get.defaultDialog(
-        title: "Risk Level: ${riskLevel.value}",
-        middleText:
-            "You have to complete the given action by $formattedDeadline.\n\n"
-            "Severity: ${matchedValue['severity']}\n"
-            "Alert Window: $timelineHours hour(s)",
-        textConfirm: "OK",
-        confirmTextColor: Colors.white,
-        onConfirm: () => Get.back(),
-      );
     }
-
-    print(formData);
   }
 
   Future<void> refreshDropdownData() async {
@@ -1038,3 +976,63 @@ class DynamicFormController extends GetxController {
 
   saveCheckList() {}
 }
+
+
+////////////////////////////////////////
+///  sendNotification(String source, bool isUpdate) {
+//     switch (source) {
+//       case "uauc":
+//         isUpdate
+//             ? NotificationHandler().sendNotification(notifications: [
+//                 {
+//                   "userId": formData["createdby"]["_id"],
+//                   "title": "Update UAUC",
+//                   "message": "An Update made in UAUC, Check It out",
+//                   "source": "uauc"
+//                 }
+//               ])
+//             : NotificationHandler().sendNotification(notifications: [
+//                 {
+//                   "userId": formData["assignedTo"],
+//                   "title": "UAUC REPORTED",
+//                   "message":
+//                       "UAUC Incident Assigned, Take Necessary actions ASAP ",
+//                   "source": "uauc"
+//                 }
+//               ]);
+//         break;
+//       case "workpermit":
+//         if (isUpdate) {
+//           if (true) {
+//             print(
+//                 "----------------sending update notification ${formData["createdby"]}");
+//             NotificationHandler().sendNotification(notifications: [
+//               {
+//                 "userId": formData["createdby"]["_id"],
+//                 "title": "Work Permit Verified",
+//                 "message": "An Update made in Work Permit, Check It out",
+//                 "source": "workpermit",
+//               }
+//             ]);
+//           } else {
+//             print(
+//                 "----------------sending failed in edit notification ${formData["verifiedDone"]}");
+//           }
+//         } else {
+//           // Map assignedTo list into the notification format
+//           List<Map<String, String>> notifications =
+//               (formData["verifiedBy"] as List<String>).map((String userId) {
+//             return {
+//               "userId": userId,
+//               "title": "Work Permit Verification",
+//               "message": "New Work Permit created, Please verify it",
+//               "source": "workpermit",
+//             };
+//           }).toList();
+
+// // Pass the entire list to sendNotification
+//           NotificationHandler().sendNotification(notifications: notifications);
+//         }
+//         break;
+//     }
+//   }

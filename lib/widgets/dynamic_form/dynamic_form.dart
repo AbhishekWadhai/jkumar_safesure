@@ -64,10 +64,8 @@ class _DynamicFormState extends State<DynamicForm> {
             controller.pageFields.any((f) => (f.tab ?? '').isNotEmpty);
 
         if (hasTabs) {
-          print("Tab based 444444444444444444444444444");
           return buildTabBasedForm();
         } else {
-          print("Regular 444444444444444444444444444");
           return buildLinearForm();
         }
       }),
@@ -284,7 +282,7 @@ class _DynamicFormState extends State<DynamicForm> {
       case 'geolocation':
         return buildGeolocation(field, isEditable, controller);
       case 'filePicker':
-        return buildFilePicker(field, isEditable, controller);
+        return buildFilePicker(field, isEditable, controller, widget.isEdit);
       default:
         return const Text('Unsupported field type');
     }

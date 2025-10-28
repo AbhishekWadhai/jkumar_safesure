@@ -72,6 +72,82 @@
   },
   {
     "_id": "66b34b204ecde7c5bfeab152",
+    "Page": "detailsOfInjuryPerson",
+    "PageFields": [
+      {
+        "Title": "Name",
+        "Headers": "name",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab153"
+      },
+      {
+        "Title": "Trade",
+        "Headers": "trade",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Age",
+        "Headers": "age",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154",
+        "key": "numeric"
+      },
+      {
+        "Title": "Nature of Injury",
+        "Headers": "natureOfInjury",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Witnessed By",
+        "Headers": "witnessedBy",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Brief Description of Incident",
+        "Headers": "briefDescriptionOfIncident",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Photo",
+        "Headers": "photo",
+        "Type": "imagepicker",
+        "_id": "66b34b204ecde7c5bfeab154",
+        "endpoint": "incident/image"
+      },
+      
+      {
+        "Title": "Immediate Action Taken",
+        "Headers": "immediateActionTaken",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Injury Immediate Action Taken",
+        "Headers": "rca",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Corrective & Preventive Action",
+        "Headers": "correctiveAndPreventiveAction",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Any Other",
+        "Headers": "anyOthers",
+        "Type": "CustomTextField",
+        "_id": "66b34b204ecde7c5bfeab154"
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "66b34b204ecde7c5bfeab152",
     "Page": "feedback",
     "PageFields": [
       {
@@ -104,7 +180,8 @@
         "Title": "Project Name",
         "Headers": "project",
         "Type": "defaultField",
-        "_id": "66b230b6cc8539b4ed3861cc1","tab": "Part 1",
+        "_id": "66b230b6cc8539b4ed3861cc1",
+        "tab": "Part 1",
         "endpoint": "project",
         "key": "projectName",
         "permissions": {
@@ -116,7 +193,8 @@
         "Title": "Permit Types",
         "Headers": "permitTypes",
         "Type": "multiselect",
-        "_id": "66b230b6cc8539b4ed3861cc3","tab": "Part 1",
+        "_id": "66b230b6cc8539b4ed3861cc3",
+        "tab": "Part 1",
         "endpoint": "permitstype",
         "key": "permitsType",
         "permissions": {
@@ -128,7 +206,8 @@
         "Title": "Date",
         "Headers": "date",
         "Type": "datepicker",
-        "_id": "66b230b6cc8539b4ed3861cc4","tab": "Part 1",
+        "_id": "66b230b6cc8539b4ed3861cc4",
+        "tab": "Part 1",
         "permissions": {
           "view": ["Workpermit Creation", "UAUC Prevention Action"],
           "edit": ["Workpermit Creation"]
@@ -138,7 +217,8 @@
         "Title": "Created By",
         "Headers": "createdby",
         "Type": "defaultField",
-        "_id": "66b230b6cc8539b4ed3861ccc","tab": "Part 1",
+        "_id": "66b230b6cc8539b4ed3861ccc",
+        "tab": "Part 1",
         "endpoint": "userDetails",
         "key": "name",
         "permissions": {
@@ -150,7 +230,8 @@
         "Title": "Remarks",
         "Headers": "remarks",
         "Type": "CustomTextField",
-        "_id": "66b230b6cc8539b4ed3861cc4","tab": "Part 1",
+        "_id": "66b230b6cc8539b4ed3861cc4",
+        "tab": "Part 1",
         "permissions": {
           "view": ["Workpermit Creation", "UAUC Prevention Action"],
           "edit": ["Workpermit Creation"]
@@ -160,7 +241,8 @@
         "Title": "Verified By",
         "Headers": "verifiedBy",
         "Type": "multiselect",
-        "_id": "66b230b6cc8539b4ed3861ccd","tab": "Part 2",
+        "_id": "66b230b6cc8539b4ed3861ccd",
+        "tab": "Part 2",
         "endpoint": "exeuser",
         "key": "name",
         "permissions": {
@@ -172,7 +254,8 @@
         "Title": "Approval By",
         "Headers": "approvalBy",
         "Type": "multiselect",
-        "_id": "66b230b6cc8539b4ed3861cce","tab": "Part 2",
+        "_id": "66b230b6cc8539b4ed3861cce",
+        "tab": "Part 2",
         "endpoint": "managementuser",
         "key": "name",
         "permissions": {
@@ -184,7 +267,8 @@
         "Title": "Attach Permits",
         "Headers": "attachPermits",
         "Type": "filePicker",
-        "_id": "66b230b6cc8539b4ed3861cd0","tab": "Part 2",
+        "_id": "66b230b6cc8539b4ed3861cd0",
+        "tab": "Part 2",
         "endpoint": "workpermitdaily",
 
         "permissions": {
@@ -198,7 +282,8 @@
         "Type": "switch",
         "Options": ["true", "false"],
         "endpoint": "verifiedBy",
-        "_id": "66b230b6cc8539b4ed3861ccf","tab": "Part 2",
+        "_id": "66b230b6cc8539b4ed3861ccf",
+        "tab": "Part 2",
         "permissions": {
           "view": ["Workpermit Creation", "UAUC Prevention Action"],
           "edit": ["Workpermit Creation"]
@@ -210,7 +295,8 @@
         "Type": "switch",
         "Options": ["true", "false"],
         "endpoint": "approvalBy",
-        "_id": "66b230b6cc8539b4ed3861cd0","tab": "Part 2",
+        "_id": "66b230b6cc8539b4ed3861cd0",
+        "tab": "Part 2",
         "permissions": {
           "view": ["Workpermit Creation", "UAUC Prevention Action"],
           "edit": ["Workpermit Creation"]
@@ -273,7 +359,7 @@
 
       {
         "Title": "Start Time",
-        "Headers": "StartTime",
+        "Headers": "startTime",
         "Type": "timepicker",
         "_id": "66b230b6cc8539b4ed3861cc5",
         "permissions": {
@@ -881,7 +967,28 @@
           "edit": ["Safety Creation"]
         }
       },
-
+      {
+        "Title": "Attendance",
+        "Headers": "attendance",
+        "Type": "CustomTextField",
+        "_id": "66b230b6cc8539b4ed3861cc4",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Attendees Hours",
+        "Headers": "attendeesHours",
+        "Type": "calculatedField",
+        "endpoint": "attendance",
+        "key": "2",
+        "_id": "66b230b6cc8539b4ed3861cc4",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
       {
         "Title": "Comments Box",
         "Headers": "commentsBox",
@@ -1002,7 +1109,7 @@
         "Title": "Type",
         "Headers": "causes",
         "Type": "simpledropdown",
-        "Options": ["Unsafe Condition", "Unsafe Action", "Both"],
+        "Options": ["Unsafe Condition", "Unsafe Action", "Both Unsafe Condition and Action"],
         "_id": "66b230b6cc8539b4ed3861cc7",
         "permissions": {
           "view": ["UAUC Creation", "UAUC Prevention Action"],
@@ -1027,7 +1134,7 @@
         "Headers": "riskValue",
         "Type": "riskMatrix",
         "_id": "66b230b6cc8539b4ed3861cca",
-        "endpoint": "RiskRating",
+        "endpoint": "riskRating",
         "key": "severity",
         "permissions": {
           "view": ["UAUC Creation", "UAUC Prevention Action"],
@@ -1047,7 +1154,7 @@
       {
         "Title": "Assigned To",
         "Headers": "assignedTo",
-        "Type": "dropdown",
+        "Type": "multiselect",
         "_id": "66b230b6cc8539b4ed3861ccc",
         "endpoint": "exeuser",
         "key": "name",
@@ -1121,6 +1228,321 @@
           "view": ["UAUC Creation", "UAUC Prevention Action"],
           "edit": ["UAUC Creation"]
         }
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "66b34cd83190d84d50262c71",
+    "Page": "incident",
+    "PageType": "tabBased",
+    "tabs": ["Incident", "Details of Injury Person"],
+    "PageFields": [
+      {
+        "Title": "Project Name",
+        "Headers": "project",
+        "Type": "defaultField",
+        "_id": "66b230b6cc8539b4ed3861cc1",
+        "endpoint": "project",
+        "key": "projectName",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Area",
+        "Headers": "area",
+        "Type": "CustomTextField",
+        "_id": "66b230b6cc8539b4ed3861cc2",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+
+      {
+        "Title": "Date",
+        "Headers": "date",
+        "Type": "datepicker",
+        "_id": "66b230b6cc8539b4ed3861cc4",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Time",
+        "Headers": "time",
+        "Type": "timepicker",
+        "_id": "66b230b6cc8539b4ed3861cc5",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Work Activity",
+        "Headers": "workActivity",
+        "Type": "CustomTextField",
+        "_id": "66b230b6cc8539b4ed3861ccc",
+"tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Description",
+        "Headers": "description",
+        "Type": "CustomTextField",
+        "_id": "66b230b6cc8539b4ed3861cc7",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Immediate Action Taken",
+        "Headers": "immediateActionTaken",
+        "Type": "CustomTextField",
+        "_id": "66b230b6cc8539b4ed3861cc7",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Contractor Firm Involved",
+        "Headers": "contractorFirmInvolved",
+        "Type": "CustomTextField",
+        "_id": "66b230b6cc8539b4ed3861cc7",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Geo Tagging",
+        "Headers": "geotagging",
+        "Type": "geolocation",
+        "_id": "66b230b6cc8539b4ed3861cc1",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Severity",
+        "Headers": "severity",
+        "Type": "dropdown",
+        "_id": "66b230b6cc8539b4ed3861cc8",
+        "endpoint": "riskRating",
+        "key": "value",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Incident Reported By",
+        "Headers": "incidentReportedBy",
+        "Type": "dropdown",
+        "_id": "66b230b6cc8539b4ed3861ccc",
+        "endpoint": "user",
+        "key": "name",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Photo",
+        "Headers": "photo",
+        "Type": "imagepicker",
+        "_id": "66b230b6cc8539b4ed3861cc7",
+        "endpoint": "incident/image",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+
+      {
+        "Title": "Type of Incident",
+        "Headers": "typeOfIncident",
+        "Type": "CustomTextField",
+        "_id": "66b230b6cc8539b4ed3861cc8",
+"tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Name of Project Manager",
+        "Headers": "nameOfProjectManager",
+        "Type": "dropdown",
+        "_id": "66b230b6cc8539b4ed3861ccc",
+        "endpoint": "managementuser",
+        "tab": "Incident",
+        "key": "name",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      {
+        "Title": "Name of Work Area Staff",
+        "Headers": "nameOfWorkAreaStaff",
+        "Type": "dropdown",
+        "_id": "66b230b6cc8539b4ed3861ccc",
+        "endpoint": "exeuser",
+        "key": "name",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      
+      {
+        "Title": "Root Cause Analysis",
+        "Headers": "rootCause",
+        "Type": "filePicker",
+        "_id": "66b230b6cc8539b4ed3861cc2",
+        "endpoint": "incident",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["UAUC Creation", "UAUC Prevention Action"],
+          "edit": ["UAUC Creation"]
+        }
+      },
+      
+      {
+        "Title": "Project Manager Signature",
+        "Headers": "undersignedProjectManager",
+        "Type": "signature",
+        "tab": "Incident",
+        "_id": "66b230b6cc8539b4ed3861ccb",
+        "endpoint": "incident/image",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Safety Officer Signature",
+        "Headers": "undersignedSafetyOfficer",
+        "Type": "signature",
+        "_id": "66b230b6cc8539b4ed3861ccb",
+        "endpoint": "incident/image",
+        "tab": "Incident",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Site Supervisor Engineer Signature",
+        "Headers": "undersignedSiteSupEngineer",
+        "Type": "signature",
+        "_id": "66b230b6cc8539b4ed3861ccb",
+        "tab": "Incident",
+        "endpoint": "incident/image",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+
+
+
+
+      {
+        "Title": "Name",
+        "Headers": "injuryPersonName",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab153"
+      },
+      {
+        "Title": "Trade",
+        "Headers": "injuryPersonTrade",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Age",
+        "Headers": "injuryPersonAge",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154",
+        "key": "numeric"
+      },
+      {
+        "Title": "Nature of Injury",
+        "Headers": "injuryNature",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Witnessed By",
+        "Headers": "injuryWitnessedBy",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Brief Description of Incident",
+        "Headers": "injuryBriefDescription",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Photo",
+        "Headers": "injuryPhoto",
+        "Type": "imagepicker",
+        "_id": "66b34b204ecde7c5bfeab154",
+        "tab": "Details of Injury Person",
+        "endpoint": "incident/image"
+      },
+      
+      {
+        "Title": "Immediate Action Taken",
+        "Headers": "injuryImmediateAction",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+    
+      {
+        "Title": "Corrective & Preventive Action",
+        "Headers": "injuryCorrectivePreventiveAction",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154"
+      },
+      {
+        "Title": "Any Other",
+        "Headers": "injuryAnyOthers",
+        "Type": "CustomTextField",
+        "tab": "Details of Injury Person",
+        "_id": "66b34b204ecde7c5bfeab154"
       }
     ],
     "__v": 0

@@ -11,9 +11,16 @@ Widget buildSecondaryFormField(
   if (controller.formData[field.headers] != null &&
       controller.formData[field.headers].isNotEmpty &&
       controller.subformData.isEmpty) {
-    controller.subformData.value = (controller.formData[field.headers] as List)
-        .whereType<Map<String, dynamic>>()
-        .toList();
+    final value = controller.formData[field.headers];
+
+    if (value is List) {
+      controller.subformData.value =
+          value.whereType<Map<String, dynamic>>().toList();
+    } else if (value is Map<String, dynamic>) {
+      controller.subformData.value = [value];
+    } else {
+      controller.subformData.value = [];
+    }
   }
 
   return Column(
