@@ -22,8 +22,8 @@ Widget buildCalculatedField(PageField field, DynamicFormController controller) {
         maxLines: null,
         onTap: () {
           controller.updateFormDataFromControllers();
-          final String? value1String =
-              controller.formData[field.endpoint]?.toString();
+          final String value1String =
+              controller.getTextController(field.endpoint ?? '').text;
           final String? value2String = field.key;
 
           final int value1 = int.tryParse(value1String ?? '') ?? 0;

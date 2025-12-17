@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -11,35 +10,36 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:signature/signature.dart';
 import 'package:sure_safe/app_constants/app_strings.dart';
 import 'package:sure_safe/helpers/dialogos.dart';
 import 'package:sure_safe/model/form_data_model.dart';
+import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/api_services.dart';
 import 'package:sure_safe/services/connection_service.dart';
 import 'package:sure_safe/services/image_service.dart';
 import 'package:sure_safe/services/load_dropdown_data.dart';
 import 'package:sure_safe/services/location_service.dart';
-import 'package:sure_safe/services/notification_service/notification_handler.dart';
+
 import 'package:sure_safe/services/text_formatters.dart';
 import 'package:sure_safe/views/saved_form_data/saved_form_data_controller.dart';
 import 'package:sure_safe/widgets/custom_alert_dialog.dart';
+import 'package:sure_safe/widgets/dynamic_form/form_helpers.dart';
 import 'package:sure_safe/widgets/progress_indicators.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:signature/signature.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 class DynamicFormController extends GetxController {
-  //var riskLevel = ''.obs;
-  var deadlineText = ''.obs;
-  var timelineHours = 0.obs;
-
   RxBool isOnline = false.obs;
   String? formId;
   RxInt severity = 1.obs;
   RxInt likelihood = 1.obs;
   RxString riskLevel = 'Low'.obs;
+  //checklist variables
   RxList<Map<String, dynamic>> checkList = <Map<String, dynamic>>[].obs;
+  RxMap<String, String> checklistResponses = <String, String>{}.obs;
+
   RxList<PageField> additionalFields = <PageField>[].obs;
   RxBool isSaved = false.obs;
   final CameraService cameraService = CameraService();
@@ -48,11 +48,11 @@ class DynamicFormController extends GetxController {
   var formResponse = <ResponseForm>[].obs;
   var isLoading = true.obs;
   RxList<PageField> pageFields = <PageField>[].obs;
-  RxMap<String, dynamic> formData = <String, dynamic>{}.obs;
+  Map<String, Rx<dynamic>> formData = {};
+
   Map<String, Timer?> debounceMap = {};
   RxMap<String, String> dropdownSelections = <String, String>{}.obs;
   RxMap<String, String> radioSelections = <String, String>{}.obs;
-  var selectedFilesMap = <String, List<Map<String, dynamic>>>{}.obs;
   String pagename = "";
   bool fieldsLoaded = false;
   final Map<String, TextEditingController> textControllers = {};
@@ -65,86 +65,11 @@ class DynamicFormController extends GetxController {
   final imageErrors = <String, String?>{}.obs;
   final matrixError = <String, String?>{}.obs;
   final SavedFormDataController saveFormController = Get.find();
+  var selectedFilesMap = <String, List<Map<String, dynamic>>>{}.obs;
   // Lifecycle hook
   @override
   void onInit() {
     super.onInit();
-  }
-
-//////////////////////////////////////////////////////////////////Initilization Part////////////////////////////////////////////////////////
-  /// Ensures page fields for [pageName] are loaded only once.
-  /// Use this in `initState` of your widget, not in build!
-  Future<void> ensurePageFieldsLoaded(String pageName,
-      [Map<String, dynamic>? initialData]) async {
-    if (pagename != pageName || pageFields.isEmpty) {
-      isLoading.value = true;
-      //--------------Vulneratbel to runtime errors-----------------------------------
-      isOnline = ConnectivityService.to.isConnected;
-      await loadFormData();
-      await getPageFields(pageName);
-      initializeFormData(initialData); // can be null
-      isLoading.value = false;
-    }
-  }
-
-  Future<List<String>> getSavedLocations() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList('locations') ?? [];
-  }
-
-  Future<void> getPageFields(String pageName) async {
-    print("--------------&&&&&&&---${formResponse.length}");
-    pageFields.value = await formResponse
-        .where((e) => e.page == pageName)
-        .expand((e) => e.pageFields)
-        .toList();
-
-    //update();
-  }
-
-  // Form Data Loader
-  Future<void> loadFormData() async {
-    isLoading(true);
-    try {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        await loadJsonFromAssets();
-      } else {
-        await loadJsonFromAssets(); // Replace with loadJsonFromApi() for online mode
-      }
-      print("Form data loaded: $formData");
-    } catch (e) {
-      print("Error loading form data: $e");
-    } finally {
-      isLoading(false);
-    }
-  }
-
-  Future<void> loadJsonFromAssets() async {
-    try {
-      final String response =
-          await rootBundle.loadString('lib/assets/json/form.json');
-      final data = await json.decode(response) as List<dynamic>;
-      formResponse.value = data
-          .map<ResponseForm>((element) => ResponseForm.fromJson(element))
-          .toList();
-      print("Loaded form data from assets: $formResponse");
-    } catch (e) {
-      print("Error loading JSON from assets: $e");
-    }
-  }
-
-  // Load JSON from API
-  Future<void> loadJsonFromApi() async {
-    try {
-      final jsonResult = await ApiService().getRequest("fields");
-      formResponse.value = jsonResult
-          .map<ResponseForm>((element) => ResponseForm.fromJson(element))
-          .toList();
-      print("Loaded form data from API: $formResponse");
-    } catch (e) {
-      print("Error loading JSON from API: $e");
-    }
   }
 
   bool get allUploaded {
@@ -157,16 +82,80 @@ class DynamicFormController extends GetxController {
     return files.isNotEmpty && files.every((f) => f['uploadStatus'] == 'done');
   }
 
+  void initChecklist(List<Map<String, dynamic>> items) {
+    for (var item in items) {
+      final title = item['CheckPoints'] ?? item['question'];
+      final defaultResponse =
+          item['response'] ?? item['defaultResponse'] ?? 'No';
+
+      if (!checklistResponses.containsKey(title)) {
+        checklistResponses[title] = defaultResponse;
+      }
+    }
+  }
+
+  void updateChecklist(String title, String value) {
+    checklistResponses[title] = value;
+  }
+
+  void saveChecklistToForm(String endpoint) {
+    printLargeJson(checklistResponses);
+    printLargeJson(checkList);
+
+    // Possible field name variations
+    const possibleQuestionKeys = ["CheckPoints", "question", "label"];
+    const possibleResponseKeys = [
+      "response",
+      "defaultResponse",
+      "answer",
+      "value"
+    ];
+
+    for (var item in checkList) {
+      // ---- 1️⃣ Find actual question key ----
+      String? questionKey = possibleQuestionKeys.firstWhere(
+        (key) => item.containsKey(key),
+        orElse: () => "",
+      );
+
+      if (questionKey.isEmpty) continue; // Skip if no matching field
+
+      final checkpointText = item[questionKey];
+
+      // ---- 2️⃣ If question exists in responses map, update response field ----
+      if (checklistResponses.containsKey(checkpointText)) {
+        // Find the matching field to update
+        String? responseKey = possibleResponseKeys.firstWhere(
+          (key) => item.containsKey(key),
+          orElse: () => "",
+        );
+
+        if (responseKey.isNotEmpty) {
+          item[responseKey] = checklistResponses[checkpointText];
+        } else {
+          // If no response field exists → create one
+          item["response"] = checklistResponses[checkpointText];
+        }
+      }
+    }
+
+    // ---- 3️⃣ Store updated list ----
+    endpoint == "workpermit"
+        ? formData["safetyMeasuresTaken"]?.value = checkList
+        : formData["details"]?.value = checkList;
+    //printLargeJson(formData);
+  }
+
   Future<String> uploadFile(
       PageField field, Map<String, dynamic> file, String endpoint) async {
     print("!!!!!!!!!!!!!!!!!!!!!$endpoint");
     file['uploadStatus'] = 'uploading';
-    formData.refresh();
+    //formData.refresh();
 
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://jkumar.vercel.app/$endpoint/file'),
+        Uri.parse('https://rohanbackend.axiomos.in/$endpoint/file'),
       );
 
       request.files.add(await http.MultipartFile.fromPath(
@@ -196,14 +185,68 @@ class DynamicFormController extends GetxController {
     //formData.refresh();
   }
 
+//////////////////////////////////////////////////////////////////Initilization Part////////////////////////////////////////////////////////
+  /// Ensures page fields for [pageName] are loaded only once.
+  /// Use this in `initState` of your widget, not in build!
+  Future<void> ensurePageFieldsLoaded(String pageName,
+      [Map<String, dynamic>? initialData]) async {
+    if (pagename != pageName || pageFields.isEmpty) {
+      isLoading.value = true;
+      //--------------Vulneratbel to runtime errors-----------------------------------
+      isOnline = ConnectivityService.to.isConnected;
+      await loadFormData();
+      await getPageFields(pageName);
+      initializeFormData(initialData); // can be null
+      isLoading.value = false;
+    }
+  }
+
+  Future<List<String>> getSavedLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList('locations') ?? [];
+  }
+
+  Future<void> getPageFields(String pageName) async {
+    pageFields.value = await formResponse
+        .where((e) => e.page == pageName)
+        .expand((e) => e.pageFields)
+        .toList();
+    //update();
+  }
+
+  // Form Data Loader
+  Future<void> loadFormData() async {
+    isLoading(true);
+    try {
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        await loadJsonFromAssets();
+      } else {
+        await loadJsonFromAssets(); // Replace with loadJsonFromApi() for online mode
+      }
+      print("Form data loaded: $formData");
+    } catch (e) {
+      print("Error loading form data: $e");
+    } finally {
+      isLoading(false);
+    }
+  }
+
   getCustomFields(String permitKey) {
-    final newFields = Strings.workpermitPageFild;
+    final newFields = Strings.workpermitPageField;
     if (newFields != null) {
       // Find the matching permit by comparing permitsType with checklistKey   2025-07-15 00:00:00.000-------12:28 PM
       final matchingFields = newFields.firstWhere(
-        (permit) => permit["permitType"]["_id"] == permitKey,
+        (permit) {
+          print(
+              "Comparing--------${permit["permitType"]["permitsType"]}--with--$permitKey ");
+          return permit["permitType"]["permitsType"] == permitKey;
+        },
         orElse: () => null,
       );
+      print(
+          ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::$matchingFields");
+      printLargeJson(matchingFields);
       if (matchingFields != null) {
         // Assign its SafetyChecks to checkList.value
         additionalFields.value =
@@ -250,8 +293,8 @@ class DynamicFormController extends GetxController {
 
   saveForm(String module) async {
     isSaved.value = !isSaved.value;
-    await updateFormDataFromControllers();
-    formData["customFields"] = customFields;
+    updateFormDataFromControllers();
+    formData["customFields"]?.value = customFields;
 
     // Get current date and time
     DateTime now = DateTime.now();
@@ -259,9 +302,9 @@ class DynamicFormController extends GetxController {
     String currentTime = DateFormat.jm().format(now); // Example: "12:28 PM"
 
     // Set defaults if null
-    String date = formData['date'] ?? currentDate;
+    String date = formData['date']?.value ?? currentDate;
     String time = module == 'workpermit'
-        ? formData['StartTime'] ?? currentTime
+        ? formData['StartTime']?.value ?? currentTime
         : formData['time'] ?? currentTime;
 
     print("----$module--------$date-------$time");
@@ -276,21 +319,26 @@ class DynamicFormController extends GetxController {
   }
 
   void initializeFormData(Map<String, dynamic>? initialData) {
-    print(
-        "------------------------------${initialData?["safetyMeasuresTaken"]}");
+    printLargeJson(initialData);
 
     if (initialData != null) {
       initialData.forEach((key, value) {
+        // Find corresponding page field
         PageField? pageField = pageFields.firstWhere(
           (field) => field.headers == key,
-          orElse: () => PageField(
-              headers: '', type: '', title: "", id: ""), // fallback empty
+          orElse: () => PageField(headers: '', type: '', title: "", id: ""),
         );
 
         String fieldType = pageField.type;
 
+        // Ensure reactive wrapper exists
+        if (!formData.containsKey(key)) {
+          formData[key] = Rx<dynamic>(null);
+        }
+
+        // Assign value based on type
         if (value is List) {
-          formData[key] = value.map((e) {
+          formData[key]!.value = value.map((e) {
             if (e is Map) {
               if (e.containsKey("_id")) {
                 // Multiselect: store only _id
@@ -298,56 +346,54 @@ class DynamicFormController extends GetxController {
                     ? e["_id"].toString()
                     : Map<String, dynamic>.from(e);
               } else {
-                // Checklist: preserve map without _id
+                // Checklist: store full map
                 return Map<String, dynamic>.from(e);
               }
-            } else if (e is String || e is int || e is double || e is bool) {
-              return e;
             } else {
-              return e.toString();
+              return e;
             }
           }).toList();
-          print("✅ Stored list under [$key]: ${formData[key]}");
-        } else if (value is Map && value.containsKey("_id")) {
-          formData[key] = Map<String, dynamic>.from(value);
+          print("✅ Stored list under [$key]: ${formData[key]!.value}");
         } else if (value is Map) {
-          formData[key] = Map<String, dynamic>.from(value);
-        } else if (value is String ||
-            value is int ||
-            value is double ||
-            value is bool) {
-          formData[key] = value;
+          formData[key]!.value = Map<String, dynamic>.from(value);
         } else {
-          print("⚠️ Unsupported type for [$key], storing as string");
-          formData[key] = value.toString();
+          formData[key]!.value = value;
         }
       });
     }
 
-    // ✅ Parse checklist data
-    checkList.value = (formData["safetyMeasuresTaken"] as List?)
-            ?.whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .where((map) =>
-                map.containsKey('CheckPoints') && map.containsKey('response'))
-            .toList() ??
-        [];
+    // Parse checklist data
+    final dynamic rawList = formData["safetyMeasuresTaken"]?.value ??
+        formData["checkpoints"]?.value;
+    if (rawList is List) {
+      checkList.value = rawList
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .where((map) =>
+              (map.containsKey('CheckPoints') && map.containsKey('response')) ||
+              (map.containsKey('question') && map.containsKey('response')))
+          .toList();
+    } else {
+      checkList.value = [];
+    }
 
-    // ✅ Custom fields
+    // Parse custom fields
     customFields.value =
-        (formData["customFields"] as Map<String, dynamic>?) ?? {};
+        (formData["customFields"]?.value as Map<String, dynamic>?) ?? {};
 
-    // ✅ Permit type for custom fields
-    getCustomFields((formData["permitTypes"] is String)
-        ? formData["permitTypes"]
-        : formData["permitTypes"]?["_id"] ?? "");
+    // Handle permit type for custom fields
+    getCustomFields(
+      (formData["permitTypes"]?.value is String)
+          ? formData["permitTypes"]!.value
+          : formData["permitTypes"]?.value?["_id"] ?? "",
+    );
 
     print("✅ Initialized form data");
-    print("📝 Comments: ${jsonEncode(formData["comment"])}");
+    print("📝 Comments: ${jsonEncode(formData["comment"]?.value)}");
   }
 
   void updateSwitchSelection(String header, bool newValue) {
-    formData[header] = newValue;
+    formData[header]?.value = newValue;
     update(); // Update the UI if using GetX
   }
 
@@ -399,8 +445,6 @@ class DynamicFormController extends GetxController {
     }
   }
 
-// Helper: composes text, border, and map inset and returns a saved File
-
   Future<String?> saveSignature(
     String key,
     String endpoint,
@@ -424,6 +468,7 @@ class DynamicFormController extends GetxController {
             '${directory.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png');
         print(
             "----------${directory.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png----------------");
+
         // Save the bytes to the file
         await imageFile.writeAsBytes(bytes!);
 
@@ -475,12 +520,45 @@ class DynamicFormController extends GetxController {
   }
 
   // Load JSON from Assets
+  Future<void> loadJsonFromAssets() async {
+    try {
+      final String response =
+          await rootBundle.loadString('lib/assets/json/form.json');
+      final data = await json.decode(response) as List<dynamic>;
+      formResponse.value = data
+          .map<ResponseForm>((element) => ResponseForm.fromJson(element))
+          .toList();
+      print("Loaded form data from assets: $formResponse");
+    } catch (e) {
+      print("Error loading JSON from assets: $e");
+    }
+  }
+
+  // Load JSON from API
+  Future<void> loadJsonFromApi() async {
+    try {
+      final jsonResult = await ApiService().getRequest("fields");
+      formResponse.value = jsonResult
+          .map<ResponseForm>((element) => ResponseForm.fromJson(element))
+          .toList();
+      print("Loaded form data from API: $formResponse");
+    } catch (e) {
+      print("Error loading JSON from API: $e");
+    }
+  }
 
   // Update form data for input fields
   void updateFormData(String key, dynamic value) {
-    formData[key] = value;
-    update();
-    print("Updated form data: ${jsonEncode(formData)}");
+    print("Updating form data: $value");
+
+    // Ensure key exists and is reactive
+    if (!formData.containsKey(key)) {
+      formData[key] = Rx<dynamic>(value);
+    } else {
+      formData[key]!.value = value;
+    }
+
+    print("Updated form data: ${formData[key]?.value}");
   }
 
   // Update dropdown selection
@@ -507,99 +585,14 @@ class DynamicFormController extends GetxController {
         .toList();
   }
 
-  // Form Submission
-  // Future<void> submitForm(String endpoint) async {
-  //   await updateFormDataFromControllers();
-  //   formData["customFields"] = customFields;
-  //   bool isValid = true;
-  //   print("-----------------------------------------------");
-  //   print(formData["riskValue"]);
-  //   for (var field in pageFields) {
-  //     switch (field.type) {
-  //       case 'imagepicker':
-  //         if (!validateImagePickerField(field.headers, field.title,
-  //             isEditable: hasEditPermission(field.permissions?.edit ?? []))) {
-  //           isValid = false;
-  //         }
-
-  //         break;
-  //       case 'signature':
-  //         if (!validateSignatureField(field.headers, field.title,
-  //             isEditable: hasEditPermission(field.permissions?.edit ?? []))) {
-  //           isValid = false;
-  //         }
-  //         break;
-  //       case 'riskMatrix':
-  //         if (!validateRiskMatrixField(field.headers, field.title,
-  //             isEditable: hasEditPermission(field.permissions?.edit ?? []))) {
-  //           isValid = false;
-  //         }
-  //         break;
-  //       // handle other types...
-  //     }
-  //   }
-
-  //   if (!isValid) {
-  //     Get.snackbar("Validation Failed", "Please complete all required fields",
-  //         backgroundColor: Colors.red, colorText: Colors.white);
-  //     return;
-  //   }
-  //   final bool isConfirmed = await Get.dialog(
-  //     CustomAlertDialog(
-  //       title: "Confirmation",
-  //       description: "Are you sure you want to submit the Data?",
-  //       buttons: [
-  //         CustomDialogButton(
-  //           onPressed: () {
-  //             print(jsonEncode(formData));
-  //             Get.back(result: false); // Close the dialog and return false
-  //           },
-  //           label: "Cancel",
-  //         ),
-  //         CustomDialogButton(
-  //           onPressed: () {
-  //             print(jsonEncode(formData));
-  //             Get.back(result: true); // Close the dialog and return true
-  //           },
-  //           label: "Submit",
-  //         ),
-  //       ],
-  //     ),
-  //   );
-
-  //   if (isConfirmed != true) return; // Exit if the user cancels
-
-  //   isLoading(true);
-  //   try {
-  //     await Future.delayed(const Duration(milliseconds: 2500));
-  //     final response = await ApiService().postRequest(endpoint, formData);
-  //     if (response != null || response == 200 || response == 201) {
-  //       showSuccessDialog(
-  //           title: "Successful",
-  //           message: "Data Submitted successfully, press OK to continue",
-  //           onOkPressed: sendNotification(endpoint, false));
-  //     }
-  //   } catch (e) {
-  //     isLoading.value = false;
-
-  //     // Show error snackbar
-  //     Get.snackbar(
-  //       "Error",
-  //       "Error Submitting data: $e",
-  //       backgroundColor: Colors.red,
-  //       colorText: Colors.white,
-  //       snackPosition: SnackPosition.BOTTOM,
-  //     );
-  //     print(e);
-  //   }
-  // }
-
   Future<void> submitForm(String endpoint) async {
-    await updateFormDataFromControllers();
-    formData["customFields"] = customFields;
+    saveChecklistToForm(endpoint);
+
+    updateFormDataFromControllers();
+    formData["customFields"]?.value = customFields;
     bool isValid = true;
-    print("111111111111111111111111111111111111111111111111111111111");
-    printLargeJson(formData);
+    final cleaned = cleanFormData(formData);
+    printLargeJson(cleaned);
     for (var field in pageFields) {
       switch (field.type) {
         case 'imagepicker':
@@ -657,8 +650,8 @@ class DynamicFormController extends GetxController {
     // final bool isOnline = isOn
 
     // Assign a UUID if not already assigned
-    formData["formId"] ??= const Uuid().v4();
-    formData["endpoint"] = endpoint; // Store for later syncing
+    formData["formId"]?.value ??= const Uuid().v4();
+    formData["endpoint"]?.value = endpoint; // Store for later syncing
 
     if (!isOnline.value) {
       // Save to SharedPreferences
@@ -681,13 +674,12 @@ class DynamicFormController extends GetxController {
     try {
       await Future.delayed(const Duration(milliseconds: 2500));
 
-      final response = await ApiService().postRequest(endpoint, formData);
+      final response = await ApiService().postRequest(endpoint, cleaned);
 
       if (response != null || response == 200 || response == 201) {
         showSuccessDialog(
           title: "Successful",
           message: "Data submitted successfully, press OK to continue",
-          //onOkPressed: null,
         );
       }
     } catch (e) {
@@ -706,8 +698,17 @@ class DynamicFormController extends GetxController {
   // Data Update
 
   Future<void> updateData(String endpoint) async {
-    await updateFormDataFromControllers();
-    formData["customFields"] = customFields;
+    // saveChecklistToForm(endpoint);
+    // updateFormDataFromControllers();
+    // formData["customFields"]?.value = customFields;
+    saveChecklistToForm(endpoint);
+
+    updateFormDataFromControllers();
+    formData["customFields"]?.value = customFields;
+
+    final cleaned = cleanFormData(formData);
+    printLargeJson(cleaned);
+
     final isConfirmed = await Get.dialog(
       AlertDialog(
         title: const Text("Confirmation"),
@@ -735,8 +736,8 @@ class DynamicFormController extends GetxController {
       await Future.delayed(const Duration(seconds: 2));
 
       // Make API call
-      final response =
-          await ApiService().updateData(endpoint, formData["_id"], formData);
+      final response = await ApiService()
+          .updateData(endpoint, formData["_id"]?.value, cleaned);
 
       // Stop loading indicator
       isLoading.value = false;
@@ -746,7 +747,6 @@ class DynamicFormController extends GetxController {
         showSuccessDialog(
           title: "Update Successful",
           message: "Data updated successfully, press OK to continue",
-          //onOkPressed: () => null,
         );
       } else {
         throw Exception("Unexpected response code: $response");
@@ -876,116 +876,25 @@ class DynamicFormController extends GetxController {
     }
   }
 
-  updateFormDataFromControllers() async {
-    print(textControllers);
-    textControllers.forEach((key, controller) {
-      formData[key] = controller.text;
+  void updateFormDataFromControllers() {
+    textControllers.forEach((key, textController) {
+      if (formData.containsKey(key)) {
+        formData[key]!.value = textController.text;
+      } else {
+        // create new Rx if missing
+        formData[key] = textController.text.obs;
+      }
     });
   }
 
   // Validations for form fields------------------------------------------//
-
-  void calculateRiskLevel() {
-    final score = severity.value * likelihood.value;
-    if (score <= 3) {
-      riskLevel.value = 'Low';
-    } else if (score < 8) {
-      riskLevel.value = 'Medium';
-    } else if (score < 12) {
-      riskLevel.value = 'High';
-    } else {
-      riskLevel.value = 'Critical';
-    }
-
-    final matchedValue = Strings.endpointToList["riskRating"].firstWhere(
-      (e) => e['severity'] == riskLevel.value,
-      orElse: () => null,
-    );
-
-    if (matchedValue != null) {
-      formData['riskValue'] = matchedValue;
-
-      // Parse alert timeline (in hours)
-      final int hours = int.tryParse(matchedValue['alertTimeline'] ?? '0') ?? 0;
-      timelineHours.value = hours;
-
-      // Calculate deadline
-      final DateTime deadline = DateTime.now().add(Duration(hours: hours));
-
-      // Format deadline
-      deadlineText.value = "${deadline.day.toString().padLeft(2, '0')}/"
-          "${deadline.month.toString().padLeft(2, '0')}/"
-          "${deadline.year} at ${deadline.hour.toString().padLeft(2, '0')}:"
-          "${deadline.minute.toString().padLeft(2, '0')}";
-    }
-  }
-
-  Future<void> refreshDropdownData() async {
-    print("refreshing data-----------------------");
-    isLoading.value = true;
-    await loadDropdownData(); // Loads the latest dropdowns globally or for this form
-    refresh(); // Reinitializes fields
-    isLoading.value = false;
-  }
-//Risk Calculation-------------------------------------------------------------
-
-  SignatureController getSignatureController(String fieldKey) {
-    if (!signatureControllers.containsKey(fieldKey)) {
-      signatureControllers[fieldKey] = SignatureController();
-    }
-    return signatureControllers[fieldKey]!;
-  }
-
-  TextEditingController getTextController(String fieldHeader) {
-    print(formData[fieldHeader]);
-    if (!textControllers.containsKey(fieldHeader)) {
-      print(formData[fieldHeader]);
-      // Create a new controller if it doesn't exist
-      textControllers[fieldHeader] = TextEditingController(
-        text: formData[fieldHeader]?.toString() ?? '',
-      );
-    }
-    return textControllers[fieldHeader]!;
-  }
-
-  getChecklist(String checklistKey) {
-    final permitsList = Strings.endpointToList["permitstype"];
-
-    if (permitsList != null) {
-      // Find the matching permit by comparing permitsType with checklistKey
-      final matchingPermit = permitsList.firstWhere(
-        (permit) => permit["permitsType"] == checklistKey,
-        orElse: () => null,
-      );
-
-      if (matchingPermit != null) {
-        // Assign its SafetyChecks to checkList.value
-        checkList.value = (matchingPermit["SafetyChecks"] as List<dynamic>?)
-                ?.map((e) => e as Map<String, dynamic>)
-                .toList() ??
-            [];
-      } else {
-        // If no match is found, clear the checklist
-        checkList.clear();
-      }
-    } else {
-      // If permitsList is null, clear the checklist
-      checkList.clear();
-    }
-  }
-
-  saveCheckList() {}
-}
-
-
-////////////////////////////////////////
-///  sendNotification(String source, bool isUpdate) {
+//   sendNotification(String source, bool isUpdate) {
 //     switch (source) {
 //       case "uauc":
 //         isUpdate
 //             ? NotificationHandler().sendNotification(notifications: [
 //                 {
-//                   "userId": formData["createdby"]["_id"],
+//                   "userId": formData["createdby"],
 //                   "title": "Update UAUC",
 //                   "message": "An Update made in UAUC, Check It out",
 //                   "source": "uauc"
@@ -1036,3 +945,132 @@ class DynamicFormController extends GetxController {
 //         break;
 //     }
 //   }
+
+  void calculateRiskLevel() {
+    print("------------------------------------------------------------------");
+    print(severity.value * likelihood.value);
+    final score = severity.value * likelihood.value;
+    if (score <= 3) {
+      riskLevel.value = 'Low';
+    } else if (score < 8) {
+      riskLevel.value = 'Medium';
+    } else if (score < 12) {
+      riskLevel.value = 'High';
+    } else {
+      riskLevel.value = 'Critical';
+    }
+    final matchedValue = Strings.endpointToList["RiskRating"].firstWhere((e) {
+      print('Comparing: ${e['severity']} with ${riskLevel.value}');
+      return e['severity'] == riskLevel.value;
+    }, orElse: () => null);
+
+    if (matchedValue != null) {
+      print(formData['riskValue']);
+      formData['riskValue']?.value = matchedValue;
+
+      // Parse the alert timeline (in hours)
+      final int timelineHours =
+          int.tryParse(matchedValue['alertTimeline'] ?? '0') ?? 0;
+
+      // Calculate deadline
+      final DateTime deadline =
+          DateTime.now().add(Duration(hours: timelineHours));
+
+      // Format deadline nicely
+      final String formattedDeadline =
+          "${deadline.day.toString().padLeft(2, '0')}/"
+          "${deadline.month.toString().padLeft(2, '0')}/"
+          "${deadline.year} at ${deadline.hour.toString().padLeft(2, '0')}:"
+          "${deadline.minute.toString().padLeft(2, '0')}";
+
+      // Show the dialog
+      showRiskDialog(
+          riskLevel: riskLevel,
+          formattedDeadline: formattedDeadline,
+          matchedValue: matchedValue,
+          timelineHours: timelineHours);
+    }
+
+    print(formData);
+  }
+
+  Future<void> refreshDropdownData() async {
+    print("refreshing data-----------------------");
+    isLoading.value = true;
+    await loadDropdownData(); // Loads the latest dropdowns globally or for this form
+    refresh(); // Reinitializes fields
+    isLoading.value = false;
+  }
+//Risk Calculation-------------------------------------------------------------
+
+  SignatureController getSignatureController(String fieldKey) {
+    if (!signatureControllers.containsKey(fieldKey)) {
+      signatureControllers[fieldKey] = SignatureController();
+    }
+    return signatureControllers[fieldKey]!;
+  }
+
+  TextEditingController getTextController(String fieldHeader) {
+    print(formData[fieldHeader]);
+    if (!textControllers.containsKey(fieldHeader)) {
+      print(formData[fieldHeader]);
+      // Create a new controller if it doesn't exist
+      textControllers[fieldHeader] = TextEditingController(
+        text: formData[fieldHeader]?.toString() ?? '',
+      );
+    }
+    return textControllers[fieldHeader]!;
+  }
+
+  getSafetyChecklist(String checklistKey) {
+    final permitsList = Strings.endpointToList["permitstype"];
+
+    if (permitsList != null) {
+      // Find the matching permit by comparing permitsType with checklistKey
+      final matchingPermit = permitsList.firstWhere(
+        (permit) => permit["permitsType"] == checklistKey,
+        orElse: () => null,
+      );
+
+      if (matchingPermit != null) {
+        // Assign its SafetyChecks to checkList.value
+        checkList.value = (matchingPermit["SafetyChecks"] as List<dynamic>?)
+                ?.map((e) => e as Map<String, dynamic>)
+                .toList() ??
+            [];
+      } else {
+        // If no match is found, clear the checklist
+        checkList.clear();
+      }
+    } else {
+      // If permitsList is null, clear the checklist
+      checkList.clear();
+    }
+  }
+
+  getChecklist(String checklistKey) {
+    final tempCheckList = Strings.endpointToList["prefilledchecklist"];
+
+    if (tempCheckList != null) {
+      // Find the matching permit by comparing permitsType with checklistKey
+      final matchingPoint = tempCheckList.firstWhere(
+        (checkpoint) => checkpoint["checklistName"] == checklistKey,
+        orElse: () => null,
+      );
+
+      if (matchingPoint != null) {
+        // Assign its SafetyChecks to checkList.value
+        checkList.value = (matchingPoint["items"] as List<dynamic>?)
+                ?.map((e) => e as Map<String, dynamic>)
+                .toList() ??
+            [];
+      } else {
+        // If no match is found, clear the checklist
+        checkList.clear();
+      }
+    } else {
+      // If permitsList is null, clear the checklist
+      checkList.clear();
+    }
+  }
+}

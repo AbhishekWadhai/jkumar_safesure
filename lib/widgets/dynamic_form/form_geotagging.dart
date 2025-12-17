@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
 import 'package:sure_safe/services/location_service.dart';
-
+import 'package:sure_safe/services/shared_preferences.dart';
 
 import 'form_extras.dart';
 
@@ -13,12 +13,24 @@ Widget buildGeolocation(
   bool isEditable,
   DynamicFormController controller,
 ) {
-  return Obx(() {
-    String? currentLocation = controller.formData[field.headers];
-    double? latitude, longitude;
+  // Ensure the observable exists
+  controller.formData.putIfAbsent(field.headers, () => Rx<dynamic>(""));
 
-    RegExp regex = RegExp(r'\(([^,]+),\s*([^)]+)\)');
-    Match? match = regex.firstMatch(currentLocation ?? "");
+  // Create a persistent TextEditingController for display
+  final textController = TextEditingController();
+
+  return Obx(() {
+    final value = controller.formData[field.headers]!.value as String? ?? "";
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (textController.text != value) {
+        textController.text = value;
+      }
+    });
+    // keep text field in sync
+
+    double? latitude, longitude;
+    final regex = RegExp(r'\(([^,]+),\s*([^)]+)\)');
+    final match = regex.firstMatch(value);
 
     if (match != null) {
       latitude = double.tryParse(match.group(1)!);
@@ -34,34 +46,30 @@ Widget buildGeolocation(
         ),
         const SizedBox(height: 10),
         TextFormField(
-          validator: (value) {
-            if (!isEditable) return null;
-            return controller.validateTextField(value);
-          },
-          controller: TextEditingController(text: currentLocation),
+          controller: textController,
           readOnly: true,
           decoration: kTextFieldDecoration("Location"),
+          validator: isEditable ? controller.validateTextField : null,
           onTap: isEditable
               ? () async {
                   if (controller.isOnline.value) {
-                    // Online: fetch and show map
+                    // Online: fetch current location
                     await controller.fetchGeolocation(field.headers);
+
                     if (latitude != null && longitude != null) {
                       showGeolocationDialog(
                         latitude: latitude,
                         longitude: longitude,
-                        onLocationSelected: (LatLng newPos) {
-                          final value =
+                        onLocationSelected: (newPos) {
+                          final newValue =
                               "(${newPos.latitude}, ${newPos.longitude})";
-                          controller.formData[field.headers] = value;
-                         // controller.saveLocationOffline(value); // save for offline
+                          controller.formData[field.headers]!.value = newValue;
                         },
                       );
                     }
                   } else {
                     // Offline: show saved locations
-                    final List<String> savedLocations =
-                        await controller.getSavedLocations();
+                    final savedLocations = await controller.getSavedLocations();
                     if (savedLocations.isEmpty) {
                       Get.snackbar("No Locations",
                           "No saved locations available offline.");
@@ -83,8 +91,8 @@ Widget buildGeolocation(
                             return ListTile(
                               title: Text(loc),
                               onTap: () {
-                                controller.formData[field.headers] = loc;
-                                Get.back(); // close bottom sheet
+                                controller.formData[field.headers]!.value = loc;
+                                Get.back();
                               },
                             );
                           }).toList(),

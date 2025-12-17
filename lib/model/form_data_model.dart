@@ -54,18 +54,19 @@ class PageField {
   List<String>? options;
   String? tab;
   Permissions? permissions;
+  bool required = true;
 
-  PageField({
-    required this.title,
-    required this.headers,
-    required this.type,
-    required this.id,
-    this.endpoint,
-    this.key,
-    this.options,
-    this.tab,
-    this.permissions,
-  });
+  PageField(
+      {required this.title,
+      required this.headers,
+      required this.type,
+      required this.id,
+      this.endpoint,
+      this.key,
+      this.options,
+      this.tab,
+      this.permissions,
+      this.required = true});
 
   factory PageField.fromRawJson(String str) =>
       PageField.fromJson(json.decode(str));
@@ -73,20 +74,20 @@ class PageField {
   String toRawJson() => json.encode(toJson());
 
   factory PageField.fromJson(Map<String, dynamic> json) => PageField(
-        title: json["Title"]?.toString() ?? "",
-        headers: json["Headers"]?.toString() ?? "",
-        type: json["Type"]?.toString() ?? "",
-        id: json["_id"]?.toString() ?? "",
-        endpoint: json["endpoint"]?.toString(),
-        key: json["key"]?.toString(),
-        options: json["Options"] == null
-            ? []
-            : List<String>.from(json["Options"].whereType<String>()),
-        tab: json["tab"]?.toString() ?? "",
-        permissions: json["permissions"] == null
-            ? null
-            : Permissions.fromJson(json["permissions"]),
-      );
+      title: json["Title"]?.toString() ?? "",
+      headers: json["Headers"]?.toString() ?? "",
+      type: json["Type"]?.toString() ?? "",
+      id: json["_id"]?.toString() ?? "",
+      endpoint: json["endpoint"]?.toString(),
+      key: json["key"]?.toString(),
+      options: json["Options"] == null
+          ? []
+          : List<String>.from(json["Options"].whereType<String>()),
+      tab: json["tab"]?.toString() ?? "",
+      permissions: json["permissions"] == null
+          ? null
+          : Permissions.fromJson(json["permissions"]),
+      required: json["required"] == "false" ? false : true);
 
   Map<String, dynamic> toJson() => {
         "Title": title,
@@ -99,6 +100,7 @@ class PageField {
             options == null ? [] : List<dynamic>.from(options!.map((x) => x)),
         "tabs": tab,
         "permissions": permissions?.toJson(),
+        "required": required
       };
 }
 

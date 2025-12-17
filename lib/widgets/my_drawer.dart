@@ -9,6 +9,7 @@ import 'package:sure_safe/helpers/sixed_boxes.dart';
 import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/shared_preferences.dart';
 import 'package:sure_safe/services/text_formatters.dart';
+import 'package:sure_safe/views/image_recognize_view.dart';
 import 'package:sure_safe/widgets/custom_alert_dialog.dart';
 
 class MyDrawer extends StatelessWidget {
@@ -167,7 +168,7 @@ class MyDrawer extends StatelessWidget {
                         ],
                       ),
                       onTap: () {
-                        Get.toNamed(Routes.workPermitPage);
+                        Get.to(ImageDetectPage());
                       },
                     ),
                     const Divider(),

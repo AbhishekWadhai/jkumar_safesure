@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:sure_safe/app_constants/app_strings.dart';
 import 'package:sure_safe/app_constants/colors.dart';
 import 'package:sure_safe/controllers/module_controller.dart';
+import 'package:sure_safe/helpers/dialogos.dart';
 import 'package:sure_safe/helpers/sixed_boxes.dart';
 import 'package:sure_safe/routes/routes_string.dart';
 import 'package:sure_safe/services/data_formatter.dart';
@@ -16,7 +17,7 @@ import 'package:sure_safe/widgets/custom_alert_dialog.dart';
 import 'package:sure_safe/widgets/dynamic_data_view.dart';
 import 'package:sure_safe/widgets/helper_widgets/risk_color_switch.dart';
 
-class DynamicTile extends StatelessWidget {
+class DynamicTile extends StatefulWidget {
   final String endpoint;
   final Map<String, dynamic> item;
   final Map<String, dynamic> fieldKeys; // same as for details
@@ -25,7 +26,7 @@ class DynamicTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPressed;
   final Function(bool)? onResult;
-  DynamicModuleController controller;
+  final DynamicModuleController controller;
 
   DynamicTile(
       {super.key,
@@ -39,6 +40,11 @@ class DynamicTile extends StatelessWidget {
       required this.controller});
 
   @override
+  State<DynamicTile> createState() => _DynamicTileState();
+}
+
+class _DynamicTileState extends State<DynamicTile> {
+  @override
   Widget build(BuildContext context) {
     final formatter = DataFormatter();
 
@@ -48,9 +54,9 @@ class DynamicTile extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
-      child: endpoint == "format"
+      child: widget.endpoint == "format"
           ? buildFormatTile(formatter, context)
-          : endpoint == 'uauc'
+          : widget.endpoint == 'uauc'
               ? buildObservationTile(formatter, context)
               : ListTile(
                   minLeadingWidth: 0,
@@ -59,23 +65,24 @@ class DynamicTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          formatter.formatCellValue(item[tileMapping['title']],
-                              tileMapping['title'] ?? ''),
+                          formatter.formatCellValue(
+                              widget.item[widget.tileMapping['title']],
+                              widget.tileMapping['title'] ?? ''),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
                       ),
-                      if (item["editAllowed"])
+                      // if (widget.item["editAllowed"])
                         IconButton(
                           onPressed: () async {
                             var result = await Get.toNamed(
                               Routes.formPage,
-                              arguments: [endpoint, item, true],
+                              arguments: [widget.endpoint, widget.item, true],
                             );
 
-                            if (result != null && onResult != null) {
-                              onResult!(result);
+                            if (result != null && widget.onResult != null) {
+                              widget.onResult!(result);
                             }
                           },
                           icon: const Icon(Icons.edit),
@@ -85,42 +92,102 @@ class DynamicTile extends StatelessWidget {
                   subtitle: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (tileMapping['subtitle'] != null)
+                      if (widget.tileMapping['subtitle'] != null)
                         Expanded(
                           child: Text(
                             formatter.formatCellValue(
-                                item[tileMapping['subtitle']],
-                                tileMapping['subtitle']!),
+                                widget.item[widget.tileMapping['subtitle']],
+                                widget.tileMapping['subtitle']!),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      if (tileMapping['trailing'] != null)
-                        Text(
-                          formatter.formatCellValue(
-                            item[tileMapping['trailing']],
-                            tileMapping['trailing']!,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                      if (widget.tileMapping['trailing'] != null)
+                        Row(
+                          children: [
+                            Text(
+                              formatter.formatCellValue(
+                                widget.item[widget.tileMapping['trailing']],
+                                widget.tileMapping['trailing']!,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            sb20,
+                            widget.item["status"] != null
+                                ? PopupMenuButton<String>(
+                                    shape: RoundedRectangleBorder(
+                                      side: BorderSide(),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 6,
+                                    color: Colors.white,
+                                    initialValue: widget.item["status"],
+                                    tooltip: "Change Status",
+                                    onSelected: (value) async {
+                                      bool confirmed =
+                                          await showConfirmationDialog(
+                                              context: context,
+                                              title: "Confirm Change",
+                                              content:
+                                                  "Do you want to change Status");
+                                      if (!confirmed) return; // user cancelled
+                                      await widget.controller.updateStatus(
+                                          widget.item["_id"] ?? "",
+                                          {"status": value});
+
+                                      setState(() {
+                                        widget.item["status"] = value;
+                                      });
+                                    },
+                                    itemBuilder: (context) => (widget
+                                            .controller.statusList)
+                                        .cast<String>()
+                                        .map<PopupMenuEntry<String>>(
+                                            (status) => PopupMenuItem<String>(
+                                                  value: status,
+                                                  child: Text(status),
+                                                ))
+                                        .toList(),
+                                    child: Container(
+                                      width: 80,
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(),
+                                        color: Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          widget.item["status"] ?? "Select",
+                                          style: const TextStyle(fontSize: 10),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : SizedBox.shrink(),
+                          ],
                         ),
                     ],
                   ),
                   onTap: () {
-                    showTileDetails(context, item, endpoint, controller);
+                    showTileDetails(context, widget.item, widget.endpoint,
+                        widget.controller);
                   },
-                  onLongPress: onLongPressed,
+                  onLongPress: widget.onLongPressed,
                 ),
     );
   }
 
   Widget buildObservationTile(DataFormatter formatter, BuildContext context) {
-    bool isOpen = item['status'] == "Open" ? true : false;
+    bool isOpen = widget.item['status'] == "Open" ? true : false;
     return InkWell(
-      onLongPress: onLongPressed,
+      onLongPress: widget.onLongPressed,
       child: ExpansionTile(
           showTrailingIcon: false,
           title: InkWell(
             onTap: () {
-              showTileDetails(context, item, endpoint, controller);
+              showTileDetails(
+                  context, widget.item, widget.endpoint, widget.controller);
             },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -129,7 +196,8 @@ class DynamicTile extends StatelessWidget {
                   width: 6,
                   height: 30,
                   decoration: BoxDecoration(
-                    color: getRiskColor(item['riskValue']['severity'] ?? ""),
+                    color: getRiskColor(
+                        widget.item['riskValue']?['severity'] ?? ""),
                     borderRadius: const BorderRadius.all(Radius.circular(10)),
                   ),
                 ),
@@ -137,22 +205,23 @@ class DynamicTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     formatter.formatCellValue(
-                        item[tileMapping['title']], tileMapping['title'] ?? ''),
+                        widget.item[widget.tileMapping['title']],
+                        widget.tileMapping['title'] ?? ''),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
                 ),
-                if (item["editAllowed"])
+                if (widget.item["editAllowed"])
                   IconButton(
                     onPressed: () async {
                       var result = await Get.toNamed(
                         Routes.formPage,
-                        arguments: [endpoint, item, true],
+                        arguments: [widget.endpoint, widget.item, true],
                       );
 
-                      if (result != null && onResult != null) {
-                        onResult!(result);
+                      if (result != null && widget.onResult != null) {
+                        widget.onResult!(result);
                       }
                     },
                     icon: const Icon(Icons.edit),
@@ -182,7 +251,7 @@ class DynamicTile extends StatelessWidget {
                           ),
                           TextSpan(
                             text: formatter.formatCellValue(
-                                item['assignedTo'], "assignedTo"),
+                                widget.item['assignedTo'], "assignedTo"),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.black, // same color as above
@@ -207,11 +276,12 @@ class DynamicTile extends StatelessWidget {
                                 ),
                                 TextSpan(
                                   text:
-                                      "${calculateActionCompletionTime(item['riskValue'], DateTime.tryParse(item['createdAt']))}(${item['riskValue']['severity']})",
+                                      "${calculateActionCompletionTime(widget.item['riskValue'], DateTime.tryParse(widget.item['date']))}(${widget.item['riskValue']?['severity'] ?? "Value not available"})",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: getRiskColor(item['riskValue']
-                                        ['severity']), // same color as above
+                                    color: getRiskColor(widget.item['riskValue']
+                                            ?['severity'] ??
+                                        ""), // same color as above
                                   ),
                                 ),
                               ],
@@ -222,20 +292,21 @@ class DynamicTile extends StatelessWidget {
                             text: TextSpan(
                             children: [
                               TextSpan(
-                                text: "Closed On: ",
+                                text: "Observation Closed",
                                 style: TextStyle(
-                                  fontWeight: FontWeight.normal,
+                                  fontWeight: FontWeight.bold,
                                   color: Colors.black, // or your desired color
                                 ),
                               ),
-                              TextSpan(
-                                text: IndianDateFormatters.formatWithTime(
-                                    DateTime.parse(item["closedOn"])),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black, // same color as above
-                                ),
-                              ),
+                              // TextSpan(
+                              //   text: IndianDateFormatters.formatWithTime(
+                              //       DateTime.parse(item["closedOn"] ??
+                              //           DateTime.now().toString)),
+                              //   style: TextStyle(
+                              //     fontWeight: FontWeight.bold,
+                              //     color: Colors.black, // same color as above
+                              //   ),
+                              // ),
                             ],
                           )),
                   ],
@@ -256,7 +327,7 @@ class DynamicTile extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  "${item['status']}",
+                  "${widget.item['status']}",
                   style: TextStyle(
                     color: isOpen
                         ? Colors.deepOrange.shade700
@@ -273,24 +344,25 @@ class DynamicTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: InkWell(
                 onTap: () {
-                  showTileDetails(context, item, endpoint, controller);
+                  showTileDetails(
+                      context, widget.item, widget.endpoint, widget.controller);
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       "Created on ${formatter.formatCellValue(
-                        item[tileMapping['trailing']],
-                        tileMapping['trailing']!,
+                        widget.item[widget.tileMapping['trailing']],
+                        widget.tileMapping['trailing']!,
                       )} at ",
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (tileMapping['subtitle'] != null)
+                    if (widget.tileMapping['subtitle'] != null)
                       Expanded(
                         child: Text(
                           formatter.formatCellValue(
-                              item[tileMapping['subtitle']],
-                              tileMapping['subtitle']!),
+                              widget.item[widget.tileMapping['subtitle']],
+                              widget.tileMapping['subtitle']!),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -315,7 +387,7 @@ class DynamicTile extends StatelessWidget {
                 CustomDialogButton(
                     label: "Yes",
                     onPressed: () {
-                      downloadFile(item["FormatFile"][0]);
+                      downloadFile(widget.item["FormatFile"][0]);
                     }),
                 CustomDialogButton(
                     label: "Cancel",
@@ -332,22 +404,23 @@ class DynamicTile extends StatelessWidget {
           Expanded(
             child: Text(
               formatter.formatCellValue(
-                  item[tileMapping['title']], tileMapping['title'] ?? ''),
+                  widget.item[widget.tileMapping['title']],
+                  widget.tileMapping['title'] ?? ''),
               style: const TextStyle(fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
           ),
-          if (item["editAllowed"])
+          if (widget.item["editAllowed"])
             IconButton(
               onPressed: () async {
                 var result = await Get.toNamed(
                   Routes.formPage,
-                  arguments: [endpoint, item, true],
+                  arguments: [widget.endpoint, widget.item, true],
                 );
 
-                if (result != null && onResult != null) {
-                  onResult!(result);
+                if (result != null && widget.onResult != null) {
+                  widget.onResult!(result);
                 }
               },
               icon: const Icon(Icons.edit),
@@ -357,28 +430,29 @@ class DynamicTile extends StatelessWidget {
       subtitle: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (tileMapping['subtitle'] != null)
+          if (widget.tileMapping['subtitle'] != null)
             Expanded(
               child: Text(
                 formatter.formatCellValue(
-                    item[tileMapping['subtitle']], tileMapping['subtitle']!),
+                    widget.item[widget.tileMapping['subtitle']],
+                    widget.tileMapping['subtitle']!),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-          if (tileMapping['trailing'] != null)
+          if (widget.tileMapping['trailing'] != null)
             Text(
               formatter.formatCellValue(
-                item[tileMapping['trailing']],
-                tileMapping['trailing']!,
+                widget.item[widget.tileMapping['trailing']],
+                widget.tileMapping['trailing']!,
               ),
               overflow: TextOverflow.ellipsis,
             ),
         ],
       ),
       onTap: () {
-        Get.to(BrowserBottomSheetLauncher(url: item["FormatFile"][0]));
+        Get.to(BrowserBottomSheetLauncher(url: widget.item["FormatFile"][0]));
       },
-      onLongPress: onLongPressed,
+      onLongPress: widget.onLongPressed,
     );
   }
 }
@@ -597,7 +671,7 @@ void handleStatusToggle(BuildContext context,
   if (confirmed == true) {
     controller.isStatusActive.value = newValue;
     await controller.updateStatus(
-        data["_id"] ?? "", newValue ? "Open" : "Closed");
+        data["_id"] ?? "", {"status": newValue ? "Open" : "Closed"});
 
     // Show success snackbar
     final now = DateTime.now();
@@ -614,5 +688,22 @@ void handleStatusToggle(BuildContext context,
       margin: const EdgeInsets.all(12),
       borderRadius: 8,
     );
+  }
+}
+
+Color getStatusColor(String status) {
+  switch (status) {
+    case "Completed":
+      return Colors.green.shade300;
+    case "In Progress":
+      return Colors.blue.shade300;
+    case "On Hold":
+      return Colors.orange.shade300;
+    case "Closed":
+      return Colors.grey.shade300;
+    case "Pending":
+      return Colors.yellow.shade300;
+    default:
+      return Colors.grey.shade200;
   }
 }

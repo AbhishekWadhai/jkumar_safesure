@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sure_safe/app_constants/app_strings.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
-
+import 'package:sure_safe/widgets/dynamic_form/dynamic_form.dart';
 
 import 'form_extras.dart';
 
@@ -11,7 +11,7 @@ Widget buildDefaultField(
   DynamicFormController controller,
   bool isEdit,
 ) {
-  final dynamic savedValue = controller.formData[field.headers];
+  final dynamic savedValue = controller.formData[field.headers]?.value;
 
   if (isEdit && field.headers.toLowerCase() == "createdby") {
     return const SizedBox.shrink();

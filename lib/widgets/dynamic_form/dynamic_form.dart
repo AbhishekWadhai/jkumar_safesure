@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
+import 'package:sure_safe/services/connection_service.dart';
 import 'package:sure_safe/widgets/dynamic_form/build_file_picker.dart';
 import 'package:sure_safe/widgets/dynamic_form/build_radio.dart';
 import 'package:sure_safe/widgets/dynamic_form/calculated_field.dart';
@@ -15,11 +16,13 @@ import 'package:sure_safe/widgets/dynamic_form/form_extras.dart';
 import 'package:sure_safe/widgets/dynamic_form/form_geotagging.dart';
 import 'package:sure_safe/widgets/dynamic_form/form_image_picker.dart';
 import 'package:sure_safe/widgets/dynamic_form/form_signature_pad.dart';
-import 'package:sure_safe/widgets/dynamic_form/form_simple_dropdown.dart';
 import 'package:sure_safe/widgets/dynamic_form/form_simple_multiselect.dart';
 import 'package:sure_safe/widgets/dynamic_form/multiselect_field.dart';
-import 'package:sure_safe/widgets/dynamic_form/risk_matrix.dart';
 import 'package:sure_safe/widgets/dynamic_form/secondary_form.dart';
+import 'package:sure_safe/widgets/dynamic_form/form_simple_dropdown.dart';
+import 'package:sure_safe/widgets/progress_indicators.dart';
+
+import 'risk_matrix.dart';
 
 class DynamicForm extends StatefulWidget {
   final String pageName;
@@ -41,35 +44,59 @@ class _DynamicFormState extends State<DynamicForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final DynamicFormController controller = Get.find();
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   // Load fields and form data for the page only once
+  //   //controller.isOffline.value = ConnectivityService.to.checkConnection();
+  //   controller.ensurePageFieldsLoaded(widget.pageName, widget.initialData);
+  // }
+
   @override
   void initState() {
     super.initState();
-    // Load fields and form data for the page only once
-    //controller.isOffline.value = ConnectivityService.to.checkConnection();
-    controller.ensurePageFieldsLoaded(widget.pageName, widget.initialData);
+
+    // Start loading
+    setState(() {
+      controller.isLoading.value = true;
+    });
+
+    controller
+        .ensurePageFieldsLoaded(widget.pageName, widget.initialData)
+        .then((_) {
+      setState(() {
+        controller.isLoading.value = false;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // Check if any field has a tab property
-
-        bool hasTabs =
-            controller.pageFields.any((f) => (f.tab ?? '').isNotEmpty);
-
-        if (hasTabs) {
-          return buildTabBasedForm();
-        } else {
-          return buildLinearForm();
-        }
-      }),
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.grey[100],
+          body: controller.isLoading.value
+              ? SizedBox.shrink()
+              : _buildFormContent(),
+        ),
+        Obx(
+          () => controller.isLoading.value
+              ? Container(
+                  color: Colors.grey.withOpacity(0.3),
+                  child: const Center(
+                    child: RohanProgressIndicator(),
+                  ),
+                )
+              : SizedBox.shrink(),
+        ),
+      ],
     );
+  }
+
+  Widget _buildFormContent() {
+    bool hasTabs = controller.pageFields.any((f) => (f.tab ?? '').isNotEmpty);
+    return hasTabs ? buildTabBasedForm() : buildLinearForm();
   }
 
   Widget buildLinearForm() {
@@ -82,6 +109,7 @@ class _DynamicFormState extends State<DynamicForm> {
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
+          //keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(14.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,6 +175,8 @@ class _DynamicFormState extends State<DynamicForm> {
 
                         return KeepAliveWrapper(
                           child: SingleChildScrollView(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
                             padding: const EdgeInsets.all(14.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,32 +225,41 @@ class _DynamicFormState extends State<DynamicForm> {
 
   Widget buildSubmitButton() {
     return ElevatedButton(
-      onPressed: () {
-        if (_formKey.currentState?.validate() ?? false) {
-          widget.isEdit
-              ? controller.updateData(widget.pageName)
-              : controller.submitForm(widget.pageName);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please correct the errors in the form'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width,
-        child: Text(
-          widget.isEdit
-              ? 'Update'
-              : controller.isOnline.value
-                  ? 'Submit'
-                  : 'Save to Submit',
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
+        onPressed: () {
+          //controller.submitForm(widget.pageName);
+          // setState(() {
+          //   controller.isLoading.value = true;
+          // });
+          if (_formKey.currentState?.validate() ?? false) {
+            widget.isEdit
+                ? controller.updateData(widget.pageName)
+                : controller.submitForm(widget.pageName);
+            // setState(() {
+            //   controller.isLoading.value = false;
+            // });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please correct the errors in the form'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            // setState(() {
+            //   controller.isLoading.value = false;
+            // });
+          }
+        },
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          child: widget.isEdit
+              ? const Text('Update', textAlign: TextAlign.center)
+              : Obx(
+                  () => Text(
+                    controller.isOnline.value ? 'Submit' : 'Save to Submit',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+        ));
   }
 
   Widget buildFormField(
@@ -235,10 +274,10 @@ class _DynamicFormState extends State<DynamicForm> {
         return buildDefaultField(field, controller, widget.isEdit);
 
       case 'checklist':
-        return buildChecklist(field, controller, isEditable);
+        return buildChecklist(field, controller, isEditable, context);
 
       case 'CustomTextField':
-        return buildCustomTextField(field, controller, isEditable);
+        return buildCustomTextField(field, controller, isEditable, context);
 
       case 'calculatedField':
         return buildCalculatedField(field, controller);

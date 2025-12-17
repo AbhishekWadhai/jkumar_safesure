@@ -3,24 +3,21 @@ import 'package:get/get.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/controllers/sub_form_controller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
+import 'package:sure_safe/services/text_formatters.dart';
+import 'package:sure_safe/services/translation.dart';
+import 'package:sure_safe/widgets/dynamic_data_view.dart';
 import 'package:sure_safe/widgets/subform.dart';
 
 Widget buildSecondaryFormField(
     PageField field, DynamicFormController controller, bool isEditable) {
   // Initialize subformData if needed
   if (controller.formData[field.headers] != null &&
-      controller.formData[field.headers].isNotEmpty &&
+      controller.formData[field.headers]?.value.isNotEmpty &&
       controller.subformData.isEmpty) {
-    final value = controller.formData[field.headers];
-
-    if (value is List) {
-      controller.subformData.value =
-          value.whereType<Map<String, dynamic>>().toList();
-    } else if (value is Map<String, dynamic>) {
-      controller.subformData.value = [value];
-    } else {
-      controller.subformData.value = [];
-    }
+    controller.subformData.value =
+        (controller.formData[field.headers]?.value as List)
+            .whereType<Map<String, dynamic>>()
+            .toList();
   }
 
   return Column(
@@ -53,10 +50,14 @@ Widget buildSecondaryFormField(
               );
 
               if (result != null) {
-                controller.formData.putIfAbsent(field.headers, () => []);
-                controller.formData[field.headers].add(result);
+                controller.formData.putIfAbsent(
+                  field.headers,
+                  () => Rx<dynamic>(<dynamic>[].obs),
+                );
+
+                controller.formData[field.headers]?.value.add(result);
                 controller.subformData.value = List<Map<String, dynamic>>.from(
-                    controller.formData[field.headers]);
+                    controller.formData[field.headers]?.value);
               }
             },
           ),
@@ -69,85 +70,108 @@ Widget buildSecondaryFormField(
             itemCount: controller.subformData.length,
             itemBuilder: (context, index) {
               final attendee = controller.subformData[index];
-              return ExpansionTile(
-                key: ValueKey(attendee),
-                title: Text(attendee[field.key] ?? ""),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
+
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: Theme.of(context).cardColor,
+                    border: Border.all(width: 1)),
+                child: ExpansionTile(
+                  key: ValueKey(attendee),
+                  // tilePadding:
+                  //     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  childrenPadding: const EdgeInsets.all(4),
+                  iconColor: Theme.of(context).primaryColor,
+                  title: Text(
+                    attendee[field.key]?.toString() ?? "Details",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...attendee.entries.map((entry) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    "${entry.key}: ",
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    entry.value?.toString() ?? "N/A",
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        Row(
-                          children: [
-                            if (isEditable)
-                              TextButton.icon(
-                                onPressed: () async {
-                                  var result = await Get.dialog(
-                                    Dialog(
-                                      child: WillPopScope(
-                                        onWillPop: () async {
-                                          Get.delete<SubFormController>();
-                                          return true;
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: SubForm(
-                                            pageName: field.headers,
-                                            initialData: attendee,
-                                            isEdit: true,
+                        // ✅ Data View Card
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: DynamicDataPage(
+                            data: attendee,
+                            fieldKeys: keysForMap,
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // ✅ Action Buttons
+                        if (isEditable)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    var result = await Get.dialog(
+                                      Dialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        child: WillPopScope(
+                                          onWillPop: () async {
+                                            Get.delete<SubFormController>();
+                                            return true;
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: SubForm(
+                                              pageName: field.headers,
+                                              initialData: attendee,
+                                              isEdit: true,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                  if (result != null) {
-                                    controller.subformData[index] = result;
-                                    controller.formData[field.headers] =
+                                    );
+
+                                    if (result != null) {
+                                      controller.subformData[index] = result;
+                                      controller
+                                              .formData[field.headers]?.value =
+                                          List.from(controller.subformData);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.edit, size: 18),
+                                  label: const Text("Edit"),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                  ),
+                                  onPressed: () {
+                                    controller.subformData.removeAt(index);
+                                    controller.formData[field.headers]?.value =
                                         List.from(controller.subformData);
-                                  }
-                                },
-                                icon: const Icon(Icons.edit),
-                                label: const Text("Edit"),
+                                  },
+                                  icon: const Icon(Icons.delete, size: 18),
+                                  label: const Text("Remove"),
+                                ),
                               ),
-                            if (isEditable)
-                              TextButton.icon(
-                                onPressed: () {
-                                  controller.subformData.removeAt(index);
-                                  controller.formData[field.headers] =
-                                      List.from(controller.subformData);
-                                },
-                                icon: const Icon(Icons.delete),
-                                label: const Text("Remove"),
-                              ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           )),

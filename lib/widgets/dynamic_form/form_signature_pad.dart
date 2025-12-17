@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:signature/signature.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
+import 'package:signature/signature.dart';
 
 Widget buildSignature(
     PageField field, DynamicFormController controller, bool isEdit) {
@@ -34,7 +34,7 @@ class _SignatureFieldState extends State<_SignatureField> {
   @override
   Widget build(BuildContext context) {
     bool isOnline = widget.controller.isOnline.value;
-    String? signatureUrl = widget.controller.formData[widget.field.headers];
+    String? signatureUrl = widget.controller.formData[widget.field.headers]?.value;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,8 +82,8 @@ class _SignatureFieldState extends State<_SignatureField> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final sigController =
-                    widget.controller.signatureControllers[widget.field.headers];
+                final sigController = widget
+                    .controller.signatureControllers[widget.field.headers];
                 if (sigController == null) return;
 
                 if (!isOnline) {

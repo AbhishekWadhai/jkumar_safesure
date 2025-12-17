@@ -11,6 +11,7 @@ class Strings {
   static String get training => "Training";
   static String get safetyReport => "Safety Report";
   static String get reporting => "Reporting";
+
   static List<String> fileTypes = [
     'jpg',
     'jpeg',
@@ -65,6 +66,8 @@ class Strings {
   static List<dynamic> induction = [];
   static List<dynamic> safetyreport = [];
   static List<dynamic> workpermitPageFild = [];
+  static List<dynamic> prefilledChecklist = [];
+  static List<dynamic> workpermitPageField = [];
 
   static final Map<String, dynamic> endpointToList = {
     "projects": projects,
@@ -91,5 +94,6 @@ class Strings {
     "uauc": uauc,
     "induction": induction,
     "safetyreport": safetyreport,
+    "prefilledchecklist": prefilledChecklist
   };
 }

@@ -118,7 +118,7 @@
         "_id": "66b34b204ecde7c5bfeab154",
         "endpoint": "incident/image"
       },
-      
+
       {
         "Title": "Immediate Action Taken",
         "Headers": "immediateActionTaken",
@@ -1109,7 +1109,11 @@
         "Title": "Type",
         "Headers": "causes",
         "Type": "simpledropdown",
-        "Options": ["Unsafe Condition", "Unsafe Action", "Both Unsafe Condition and Action"],
+        "Options": [
+          "Unsafe Condition",
+          "Unsafe Action",
+          "Both Unsafe Condition and Action"
+        ],
         "_id": "66b230b6cc8539b4ed3861cc7",
         "permissions": {
           "view": ["UAUC Creation", "UAUC Prevention Action"],
@@ -1290,7 +1294,7 @@
         "Headers": "workActivity",
         "Type": "CustomTextField",
         "_id": "66b230b6cc8539b4ed3861ccc",
-"tab": "Incident",
+        "tab": "Incident",
         "permissions": {
           "view": ["UAUC Creation", "UAUC Prevention Action"],
           "edit": ["UAUC Creation"]
@@ -1384,7 +1388,7 @@
         "Headers": "typeOfIncident",
         "Type": "CustomTextField",
         "_id": "66b230b6cc8539b4ed3861cc8",
-"tab": "Incident",
+        "tab": "Incident",
         "permissions": {
           "view": ["UAUC Creation", "UAUC Prevention Action"],
           "edit": ["UAUC Creation"]
@@ -1416,7 +1420,7 @@
           "edit": ["UAUC Creation"]
         }
       },
-      
+
       {
         "Title": "Root Cause Analysis",
         "Headers": "rootCause",
@@ -1429,7 +1433,7 @@
           "edit": ["UAUC Creation"]
         }
       },
-      
+
       {
         "Title": "Project Manager Signature",
         "Headers": "undersignedProjectManager",
@@ -1466,9 +1470,6 @@
           "edit": ["Safety Creation"]
         }
       },
-
-
-
 
       {
         "Title": "Name",
@@ -1521,7 +1522,7 @@
         "tab": "Details of Injury Person",
         "endpoint": "incident/image"
       },
-      
+
       {
         "Title": "Immediate Action Taken",
         "Headers": "injuryImmediateAction",
@@ -1529,7 +1530,7 @@
         "tab": "Details of Injury Person",
         "_id": "66b34b204ecde7c5bfeab154"
       },
-    
+
       {
         "Title": "Corrective & Preventive Action",
         "Headers": "injuryCorrectivePreventiveAction",
@@ -2380,6 +2381,102 @@
         "_id": "66b230b6cc8539b4ed3861ccb",
         "tab": "Part 5",
         "key": "numeric",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "66b34cd83190d84d50262c71",
+    "Page": "checklist",
+    "PageFields": [
+      {
+        "Title": "Assigned To",
+        "Headers": "assignedTo",
+        "Type": "dropdown",
+        "_id": "66b230b6cc8539b4ed3861cc1",
+        "endpoint": "user",
+        "key": "name",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Checklist Name",
+        "Headers": "name",
+        "Type": "dropdown",
+        "_id": "66b230b6cc8539b4ed3861cc1",
+        "endpoint": "prefilledchecklist",
+        "key": "checklistName",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Checklist Number",
+        "Headers": "checklistNumber",
+        "Type": "CustomTextField",
+        "key": "numeric",
+        "_id": "66b230b6cc8539b4ed3861cc4",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Description",
+        "Headers": "description",
+        "Type": "CustomTextField",
+
+        "_id": "66b230b6cc8539b4ed3861cc4",
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Items",
+        "Headers": "items",
+        "Type": "checklist",
+        "_id": "66b230b6cc8539b4ed3861cca",
+        "endpoint": "permitstype",
+        "key": "permitsType",
+        "permissions": {
+          "view": ["Workpermit Creation", "UAUC Prevention Action"],
+          "edit": ["Workpermit Creation"]
+        }
+      },
+      {
+        "Title": "Reassign",
+        "Headers": "reassign",
+        "Type": "switch",
+        "Options": ["true", "false"],
+        "endpoint": "reassign",
+        "_id": "66b230b6cc8539b4ed3861ccf"
+      },
+      {
+        "Title": "Status",
+        "Headers": "status",
+        "Type": "simpledropdown",
+        "_id": "66b230b6cc8539b4ed3861ccc",
+        "Options": ["Draft", "Assigned", "In Progress", "Submitted", "Closed"],
+        "permissions": {
+          "view": ["Safety Creation", "UAUC Prevention Action"],
+          "edit": ["Safety Creation"]
+        }
+      },
+      {
+        "Title": "Created By",
+        "Headers": "createdby",
+        "Type": "defaultField",
+        "_id": "66b230b6cc8539b4ed3861ccc",
+        "endpoint": "userDetails",
+        "key": "name",
         "permissions": {
           "view": ["Safety Creation", "UAUC Prevention Action"],
           "edit": ["Safety Creation"]

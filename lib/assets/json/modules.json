@@ -399,5 +399,84 @@
         "default": ""
       }
     ]
+  },
+  {
+    "moduleName": "checklist",
+    "type": "regularList",
+    "tileTitle1": "description",
+    "tileTitle2": "assignedTo",
+    "tileTitle3": "date",
+    "filters": [
+      {
+        "key": "severity",
+        "label": "Severity",
+        "type": "dropdown",
+        "source": "severities",
+        "path": "severity",
+        "default": "all"
+      },
+      {
+        "key": "project",
+        "label": "Project",
+        "type": "dropdown",
+        "source": "projects",
+        "path": "project._id",
+        "default": "all"
+      },
+      {
+        "key": "from",
+        "label": "From",
+        "type": "date",
+        "path": "date",
+        "default": ""
+      },
+      {
+        "key": "to",
+        "label": "To",
+        "type": "date",
+        "path": "date",
+        "default": ""
+      }
+    ],
+    "editAllowed": ["createdby", "verifiedBy", "approvalBy"]
+  },
+  {
+    "moduleName": "labour",
+    "type": "regularList",
+    "tileTitle1": "name",
+    "tileTitle2": "skillLevel",
+    "tileTitle3": "experienceInYears",
+    "filters": [
+      {
+        "key": "severity",
+        "label": "Severity",
+        "type": "dropdown",
+        "source": "severities",
+        "path": "severity",
+        "default": "all"
+      },
+      {
+        "key": "project",
+        "label": "Project",
+        "type": "dropdown",
+        "source": "projects",
+        "path": "project._id",
+        "default": "all"
+      },
+      {
+        "key": "from",
+        "label": "From",
+        "type": "date",
+        "path": "date",
+        "default": ""
+      },
+      {
+        "key": "to",
+        "label": "To",
+        "type": "date",
+        "path": "date",
+        "default": ""
+      }
+    ]
   }
 ]

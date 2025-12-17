@@ -18,23 +18,44 @@ import 'package:sure_safe/helpers/app_keys.dart'; // To access temporary directo
 class CameraService with ChangeNotifier {
   late CameraController _controller;
   late List<CameraDescription> _cameras;
-  late CameraDescription _camera;
+  int _currentCameraIndex = 0;
   bool _isInitialized = false;
 
   // Initialize the camera
   Future<void> initializeCamera() async {
     try {
       _cameras = await availableCameras();
-      _camera = _cameras.first; // Select the first available camera
+      _currentCameraIndex = 0;
 
-      _controller = CameraController(_camera, ResolutionPreset.medium);
-      await _controller.initialize();
-
-      _isInitialized = true;
-      notifyListeners(); // Notify listeners when the camera is initialized
+      await _initController();
     } catch (e) {
       print('Error initializing camera: $e');
     }
+  }
+
+  Future<void> _initController() async {
+    _controller = CameraController(
+      _cameras[_currentCameraIndex],
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+
+    await _controller.initialize();
+    _isInitialized = true;
+    notifyListeners();
+  }
+
+  Future<void> switchCamera() async {
+    if (_cameras.length < 2) return;
+
+    _isInitialized = false;
+    notifyListeners();
+
+    await _controller.dispose();
+
+    _currentCameraIndex = (_currentCameraIndex + 1) % _cameras.length;
+
+    await _initController();
   }
 
   // Function to capture an image
@@ -198,22 +219,40 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
       body: _isCameraInitialized
           ? Stack(
               children: [
-                // Full-screen Camera Preview
                 SafeArea(
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height,
-                    child: CameraPreview(_cameraService.controller),
-                  ),
+                  child: CameraPreview(_cameraService.controller),
                 ),
-                // Capture button overlay
+
+                // 🔁 Switch Camera Button (Top Right)
+                // Positioned(
+                //   top: 20,
+                //   right: 20,
+                //   child:
+                // ),
+
+                // 📸 Capture Button
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
-                    child: FloatingActionButton(
-                      onPressed: _captureImage,
-                      backgroundColor: Colors.red,
-                      child: Icon(Icons.camera_alt),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        FloatingActionButton(
+                          onPressed: _captureImage,
+                          backgroundColor: Colors.red,
+                          child: const Icon(Icons.camera_alt),
+                        ),
+                        FloatingActionButton(
+                          heroTag: 'switchCam',
+                          backgroundColor: Colors.black54,
+                          onPressed: () async {
+                            await _cameraService.switchCamera();
+                            setState(() {});
+                          },
+                          child: const Icon(Icons.cameraswitch),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -292,4 +331,3 @@ Future<File?> renderWidgetToFileUsingNavigatorKey(Widget widget,
     entry.remove();
   }
 }
-

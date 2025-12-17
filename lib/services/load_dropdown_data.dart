@@ -4,7 +4,8 @@ import 'package:sure_safe/services/api_services.dart';
 import 'package:sure_safe/services/shared_preferences.dart';
 
 Future<void> loadDropdownData() async {
-  print("----------------${Strings.endpointToList["project"]}------------------");
+  print(
+      "----------------${Strings.endpointToList["project"]}------------------");
   List<String> endpoints = [
     "projects",
     "permitstype",
@@ -22,7 +23,8 @@ Future<void> loadDropdownData() async {
     "specific",
     "uauc",
     "induction",
-    "safetyreport"
+    "safetyreport",
+    "prefilledchecklist"
   ];
 
   // Optional: Define parsers in case you need custom transformations later
@@ -41,7 +43,6 @@ Future<void> loadDropdownData() async {
 
     try {
       if (isOnline) {
-
         print("🟢 [$endpoint] Fetched ${parsedData.length} items from API");
 
         final List<dynamic> response = await ApiService().getRequest(endpoint);
@@ -96,7 +97,7 @@ Future<void> loadDropdownData() async {
                       proj['_id'] == Strings.endpointToList['project']['_id']))
               .toList();
           break;
-
+        case "prefilledchecklist":
         case "topic":
         case "equipments":
         case "riskRating":

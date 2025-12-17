@@ -299,6 +299,9 @@ class SubForm extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             TextFormField(
+              onTapOutside: (event) {
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
               validator: (value) => controller.validateTextField(value),
               controller: textController,
               decoration: kTextFieldDecoration("Enter ${field.title}"),

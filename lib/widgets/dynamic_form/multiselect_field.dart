@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:multi_select_flutter/dialog/multi_select_dialog_field.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:multi_select_flutter/util/multi_select_item.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
 
 Widget buildMultiselectField(PageField field, DynamicFormController controller,
     bool isEditable, BuildContext context) {
+  // Ensure reactive field initialization
+  controller.formData.putIfAbsent(field.headers, () => Rx<List<dynamic>>([]));
+
   return FutureBuilder<List<Map<String, String>>>(
     future: controller.getDropdownData(field.endpoint ?? "", field.key ?? ""),
     builder: (BuildContext context,
@@ -22,19 +26,21 @@ Widget buildMultiselectField(PageField field, DynamicFormController controller,
         return _buildErrorField(field.title);
       } else if (snapshot.hasData) {
         final List<Map<String, String>> options = snapshot.data ?? [];
-        final List<String> selectedIds =
-            (controller.formData[field.headers] as List?)
-                    ?.map((item) {
-                      if (item is String) return item;
-                      if (item is Map<String, dynamic> &&
-                          item.containsKey('_id')) {
-                        return item['_id']?.toString() ?? '';
-                      }
-                      return '';
-                    })
-                    .where((id) => id.isNotEmpty)
-                    .toList() ??
-                [];
+
+        // Access the Rx value safely
+        final List<dynamic> rawSelected =
+            (controller.formData[field.headers]?.value as List<dynamic>);
+
+        final List<String> selectedIds = rawSelected
+            .map((item) {
+              if (item is String) return item;
+              if (item is Map<String, dynamic> && item.containsKey('_id')) {
+                return item['_id']?.toString() ?? '';
+              }
+              return '';
+            })
+            .where((id) => id.isNotEmpty)
+            .toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,34 +61,65 @@ Widget buildMultiselectField(PageField field, DynamicFormController controller,
                       ),
               child: AbsorbPointer(
                 absorbing: !isEditable,
-                child: MultiSelectDialogField<String>(
-                  searchable: true,
-                  validator: (value) =>
-                      isEditable ? controller.validateMultiSelect(value) : null,
-                  dialogHeight: 300,
-                  items: options.map((option) {
-                    return MultiSelectItem<String>(
-                      option['_id'] ?? '',
-                      option[field.key] ?? '',
-                    );
-                  }).toList(),
-                  initialValue: selectedIds,
-                  onConfirm: (selectedValues) {
-                    if (isEditable) {
-                      controller.updateFormData(field.headers, selectedValues);
-                    }
-                  },
-                  title: Text("Select ${field.title}"),
-                  buttonText: Text(
-                    "Select ${field.title}",
-                    style: TextStyle(
-                        color: isEditable ? Colors.black : Colors.grey),
-                  ),
+                child: Container(
+                  alignment: Alignment.center,
+                  constraints: const BoxConstraints(minHeight: 60),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(
                         color: isEditable ? Colors.grey : Colors.grey),
                     borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: MultiSelectBottomSheetField<String?>(
+                    buttonIcon: const Icon(Icons.list),
+                    //iconSize: 26,
+                    decoration: BoxDecoration(),
+                    maxChildSize: 0.7,
+                    initialChildSize: 0.7,
+                    searchable: true,
+                    validator: (value) {
+                      if (!isEditable) return null;
+                      if (!field.required) return null;
+                      return controller.validateMultiSelect(
+                          value?.whereType<String>().toList());
+                    },
+                    //dialogHeight: 300,
+                    items: options.map((option) {
+                      return MultiSelectItem<String?>(
+                        option['_id'] ?? '',
+                        option[field.key] ?? '',
+                      );
+                    }).toList(),
+                    initialValue: selectedIds,
+                    onConfirm: (selectedValues) {
+                      if (isEditable) {
+                        // Update the Rx list value
+                        (controller.formData[field.headers]
+                                as Rx<List<dynamic>>)
+                            .value = selectedValues;
+                      }
+                    },
+                    title: Padding(
+                      padding: const EdgeInsets.only(left: 12.0),
+                      child: Text("Select ${field.title}"),
+                    ),
+                    buttonText: Text(
+                      "Select ${field.title}",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isEditable ? Colors.black : Colors.grey,
+                        fontSize: 16,
+                        height: 1.8, // ✅ pushes text down to visual center
+                      ),
+                      strutStyle: const StrutStyle(
+                        height: 2.0, // ✅ matches line height
+                        forceStrutHeight: true, // ✅ locks baseline box
+                      ),
+                      textHeightBehavior: const TextHeightBehavior(
+                        applyHeightToFirstAscent: false,
+                        applyHeightToLastDescent: false,
+                      ),
+                    ),
                   ),
                 ),
               ),

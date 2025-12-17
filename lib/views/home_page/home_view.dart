@@ -71,7 +71,7 @@ class HomeView extends StatelessWidget {
                 ],
                 automaticallyImplyLeading: false,
                 scrolledUnderElevation: 0,
-                expandedHeight: 320,
+                expandedHeight: 360,
                 toolbarHeight: 120,
                 pinned: true,
                 flexibleSpace: AppBarContent(
@@ -188,16 +188,16 @@ class HomeView extends StatelessWidget {
                       sb6,
                       const Divider(color: Colors.black87),
                       sb6,
-                      Container(
-                        height: 250,
-                        decoration: BoxDecoration(
-                          color: Color(0xFFDA6C6C),
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                        ),
-                        child: DashboardPage(
-                          homeController: controller,
-                        ),
-                      ),
+                      // Container(
+                      //   height: 250,
+                      //   decoration: BoxDecoration(
+                      //     color: Color(0xFFDA6C6C),
+                      //     borderRadius: BorderRadius.all(Radius.circular(20)),
+                      //   ),
+                      //   child: DashboardPage(
+                      //     homeController: controller,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -212,22 +212,6 @@ class HomeView extends StatelessWidget {
   Row QuickActionRow() {
     return Row(
       children: [
-        MyGridQuick(
-            image: Image.asset(Assets.calendar),
-            activity: "Weekly Permit",
-            onTap: () async {
-              if (Strings.permisssions.contains("Workpermit Creation")) {
-                var result = await Get.toNamed(
-                  Routes.formPage,
-                  arguments: ['workpermitdaily', <String, dynamic>{}, false],
-                );
-                if (result == true) {
-                  Get.snackbar("Work Permit Created Successfully", "");
-                }
-              } else {
-                Get.snackbar("Not Authorized to create Workpermit", "");
-              }
-            }),
         MyGridQuick(
             image: Image.asset(Assets.workPermit),
             activity: "Create Permit",
@@ -294,7 +278,7 @@ class HomeView extends StatelessWidget {
             }),
         MyGridQuick(
             image: Image.asset(Assets.uauc),
-            activity: "Reporting UAUC",
+            activity: "Observation",
             onTap: () async {
               if (Strings.permisssions.contains("UAUC Creation")) {
                 var result = await Get.toNamed(
@@ -302,10 +286,10 @@ class HomeView extends StatelessWidget {
                   arguments: ['uauc', <String, dynamic>{}, false],
                 );
                 if (result == true) {
-                  Get.snackbar("UAUC Reported Successfully", "");
+                  Get.snackbar("Observation Reported Successfully", "");
                 }
               } else {
-                Get.snackbar("Not Authorized to create UAUC", "");
+                Get.snackbar("Not Authorized to create Observation", "");
               }
             }),
         MyGridQuick(
@@ -320,6 +304,42 @@ class HomeView extends StatelessWidget {
                 Get.snackbar("Safety Data Reported Successfully", "");
               }
             }),
+        MyGridQuick(
+            image: Image.asset(Assets.checklist),
+            activity: "Create Checklist",
+            onTap: () async {
+              var result = await Get.toNamed(
+                Routes.formPage,
+                arguments: ['checklist', <String, dynamic>{}, false],
+              );
+              if (result == true) {
+                Get.snackbar("Checklist Created Successfully", "");
+              }
+            }),
+        MyGridQuick(
+            image: Image.asset(Assets.incident),
+            activity: "Report Incident",
+            onTap: () async {
+              var result = await Get.toNamed(
+                Routes.formPage,
+                arguments: ['incident', <String, dynamic>{}, false],
+              );
+              if (result == true) {
+                Get.snackbar("Incident Reported Successfully", "");
+              }
+            }),
+        // MyGridQuick(
+        //     image: Image.asset(Assets.violation),
+        //     activity: "Violation Notice",
+        //     onTap: () async {
+        //       var result = await Get.toNamed(
+        //         Routes.formPage,
+        //         arguments: ['violation', <String, dynamic>{}, false],
+        //       );
+        //       if (result == true) {
+        //         Get.snackbar("Violation Notice Created", "");
+        //       }
+        //     }),
       ],
     );
   }
@@ -431,7 +451,6 @@ class AppBarContent extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 10),
                               ],
                             ),
                           ),
@@ -559,6 +578,24 @@ class AppBarContent extends StatelessWidget {
                                 onTap: () {
                                   Get.toNamed(Routes.modulePage,
                                       arguments: ["format"]);
+                                },
+                              ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.checklist),
+                                activity: "checklists",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["checklist"]);
+                                },
+                              ),
+                              MyGrid(
+                                avatarColor: Colors.red[100]!,
+                                image: Image.asset(Assets.checklist),
+                                activity: "Labour Pool",
+                                onTap: () {
+                                  Get.toNamed(Routes.modulePage,
+                                      arguments: ["labour"]);
                                 },
                               ),
                             ],

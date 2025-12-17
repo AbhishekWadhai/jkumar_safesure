@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
-
 import 'form_extras.dart';
 
 Widget myDatePicker(
@@ -30,7 +29,8 @@ Widget myDatePicker(
         controller: dateController,
         readOnly: true, // <- always true, no keyboard ever
         validator: (value) {
-          if (!isEditable) return null; // Skip validation for read-only fields
+          if (!isEditable) return null;
+          // Skip validation for read-only fields
           return controller.validateTextField(value);
         },
         decoration: kTextFieldDecoration(
@@ -90,7 +90,10 @@ Widget myTimePicker(
       const SizedBox(height: 10),
       TextFormField(
         validator: (value) {
-          if (!isEditable) return null; // Skip validation for read-only fields
+          if (!isEditable) return null;
+          if (!field.required) {
+            return null;
+          } // Skip validation for read-only fields
           return controller
               .validateTextField(value); // Validate editable fields
         },

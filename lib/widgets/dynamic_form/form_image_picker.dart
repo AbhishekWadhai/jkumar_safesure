@@ -6,10 +6,11 @@ import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
 import 'package:sure_safe/views/additional_views/image_view_page.dart';
 
+
 Widget buildImagePickerField(
     PageField field, DynamicFormController controller, bool isEditable) {
   // Initialize with empty string if missing
-  controller.formData.putIfAbsent(field.headers, () => "");
+  controller.formData.putIfAbsent(field.headers, () => "".obs);
   //bool isOnline = controller.isOnline.value;
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,7 +66,7 @@ Widget buildImagePickerField(
 
       // Image Preview + Error
       Obx(() {
-        final imageUrl = controller.formData[field.headers];
+        final imageUrl = controller.formData[field.headers]?.value;
         final imageError = controller.imageErrors[field.headers];
 
         return Column(
@@ -74,15 +75,7 @@ Widget buildImagePickerField(
             const SizedBox(height: 10),
             if (imageUrl is String && imageUrl.isNotEmpty) ...[
               GestureDetector(
-                // onTap: () => Get.to(ImageViewPage(imageUrl: imageUrl)),
-                onTap: () {
-                  Get.bottomSheet(
-                    SizedBox(
-                        height: 700, child: ImageViewPage(imageUrl: imageUrl)),
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                  );
-                },
+                onTap: () => Get.to(ImageViewPage(imageUrl: imageUrl)),
                 child: imageUrl.startsWith('http')
                     ? Image.network(
                         imageUrl,

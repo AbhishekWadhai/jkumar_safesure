@@ -17,4 +17,5 @@ class Assets {
   static const String incident = "lib/assets/incident-report.png";
   static const String noData = "lib/assets/no_data_image.png";
   static const String formats = "lib/assets/formats.png";
+  static const String checklist = "lib/assets/checklist.png";
 }

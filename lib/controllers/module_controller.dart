@@ -29,19 +29,22 @@ class DynamicModuleController extends GetxController {
   RxList<Filter> filters = <Filter>[].obs;
   RxMap<String, dynamic> selectedFilters = <String, dynamic>{}.obs;
   // --- Pagination state ---
-  RxInt pageSize = 10.obs; // default page size (flexible)
+  RxInt pageSize = 50.obs; // default page size (flexible)
   RxInt currentPage = 1.obs; // 1-based
   RxInt totalPages = 1.obs;
   RxInt totalItems = 0.obs;
+  List statusList = [];
+  bool get canCreate => config['paginationMode'] == "local" ? false : true;
 
   // Pagination mode: "client" or "server". Default to client-side paging.
   // You can set this in modules.json as config['paginationMode'] = 'server'
   String get paginationMode =>
-      (config['paginationMode'] as String?)?.toLowerCase() ?? 'client';
+      (config['paginationMode'] as String?)?.toLowerCase() ?? 'server';
 
   // For server-side: store last fetched page to avoid duplicate fetches in infinite scroll
   int _lastServerPageFetched = 0;
   bool _hasMoreServerPages = true;
+  bool _hasPreviousPages = false;
 
   @override
   void onInit() {
@@ -50,15 +53,14 @@ class DynamicModuleController extends GetxController {
   }
 
   Future<void> loadConfig() async {
-    final jsonString =
-        await rootBundle.loadString('lib/assets/json/modules.json');
+    final jsonString = await rootBundle.loadString('lib/assets/json/modules.json');
     final configList = List<Map<String, dynamic>>.from(jsonDecode(jsonString));
 
     config.value = configList.firstWhere(
       (c) => c['moduleName'] == moduleName,
       orElse: () => {},
     );
-
+    statusList = config["statusList"] ?? [];
     // Safe read from RxMap
     final dynamic rawEditAllowed = config['editAllowed'];
     final dynamic filtersConfig = config['filters'];
@@ -79,14 +81,10 @@ class DynamicModuleController extends GetxController {
     }
   }
 
-  /// Fetch data. If server-side pagination is configured, this will attempt to fetch
-  /// the first page from server. Otherwise it will fetch the full list and do
-  /// client-side pagination.
   Future<void> fetchData({bool resetPagination = false}) async {
     if (resetPagination) {
       resetPaginationState();
     }
-
     isLoading.value = true;
     try {
       if (paginationMode == 'server') {
@@ -96,67 +94,16 @@ class DynamicModuleController extends GetxController {
         currentPage.value = 1;
         await _fetchServerPage(currentPage.value);
       } else {
+        print("fetching from here");
         // CLIENT-SIDE: fetch full dataset and paginate locally
         final raw = await ApiService().getRequest(moduleName);
         final List<Map<String, dynamic>> items =
             List<Map<String, dynamic>>.from(raw);
-
+        final currentUserId = Strings.userId;
         // compute editAllowed flag for each item (same logic as before)
         for (var i = 0; i < items.length; i++) {
-          final item = Map<String, dynamic>.from(items[i]); // copy
-          bool canEdit = false;
-
-          bool _fieldMatchesCurrentUser(dynamic fieldObj) {
-            if (fieldObj == null) return false;
-
-            final currentUserId = Strings.userId;
-
-            if (fieldObj is String) {
-              if (fieldObj == currentUserId) return true;
-              return false;
-            }
-
-            if (fieldObj is Map<String, dynamic>) {
-              final fObjId = fieldObj['_id']?.toString();
-              final fUserId = fieldObj['userId']?.toString();
-
-              if (currentUserId.isNotEmpty &&
-                  fUserId != null &&
-                  fUserId == currentUserId) return true;
-              if (currentUserId.isNotEmpty &&
-                  fObjId != null &&
-                  fObjId == currentUserId) return true;
-
-              return false;
-            }
-
-            if (fieldObj is List) {
-              for (final e in fieldObj) {
-                if (_fieldMatchesCurrentUser(e)) return true;
-              }
-            }
-            return false;
-          }
-
-          for (final fieldName in editAllowed) {
-            if (!item.containsKey(fieldName)) continue;
-
-            final fieldValue = item[fieldName];
-
-            if (_fieldMatchesCurrentUser(fieldValue)) {
-              canEdit = true;
-              break;
-            } else if (fieldValue is List) {
-              for (final fv in fieldValue) {
-                if (_fieldMatchesCurrentUser(fv)) {
-                  canEdit = true;
-                  break;
-                }
-              }
-              if (canEdit) break;
-            }
-          }
-
+          final item = Map<String, dynamic>.from(items[i]);
+          final canEdit = isEditAllowed(item, editAllowed, currentUserId);
           item['editAllowed'] = canEdit;
           items[i] = item;
         }
@@ -173,9 +120,10 @@ class DynamicModuleController extends GetxController {
         }
 
         dataList.value = filtered;
-
+        currentPageItems.value = filtered;
+        print(dataList.length);
         // After setting dataList, apply filters and pagination
-        applyFilters();
+        // applyFilters();
       }
     } catch (e) {
       Get.snackbar(
@@ -192,68 +140,81 @@ class DynamicModuleController extends GetxController {
     }
   }
 
-  /// Helper: fetch a single server page. You must adapt ApiService.getRequest to accept query params,
-  /// or create/get a method that does GET with query parameters.
+  /// Helper: fetch a single server page.
+  ///
   Future<void> _fetchServerPage(int page) async {
     if (!_hasMoreServerPages && page > _lastServerPageFetched) return;
 
     isLoading.value = true;
+
     try {
-      // Example query params: page and limit. Adapt ApiService to accept these.
-      final queryParams = {
-        'page': page.toString(),
-        'limit': pageSize.value.toString()
-      };
+      String queryParams =
+          "$moduleName?list=${pageSize.value}&page=${currentPage.value}";
 
-      // NOTE: Change this call to whatever your ApiService supports for query params.
-      final raw = await ApiService().getRequest(
-        moduleName,
-        // If getRequest doesn't accept params, adapt ApiService or add a new method.
-        // e.g. getRequestWithParams(moduleName, queryParams)
-        // Here we assume the method accepts optional second param `queryParameters`.
-        // If not, replace this with your implementation.
-        // This line will likely require a small change in ApiService.
-        // For safety, the app will still work with client-side paging if you leave paginationMode = 'client'.
-        // ignore: avoid_dynamic_calls
-        // dynamic usage shown purely as guidance
-        // Example: ApiService().getRequest(moduleName, queryParameters: queryParams)
-      );
+// Add Tab Parameter if tabBased
+      if (config['type'] == 'tabBased') {
+        final tabs = List<String>.from(config['tabs'] ?? []);
+        final selectedTab = tabs[selectedTabIndex.value];
 
-      // If ApiService returns a structure like { items: [...], total: 123 }, adapt accordingly.
-      // For now, we assume the API returns a list for the requested page.
+        final tabFilters = (config['tabFilters'] ?? {})[selectedTab];
+        if (tabFilters != null) {
+          tabFilters.forEach((key, value) {
+            queryParams += "&$key=$value";
+          });
+        }
+      }
+
+// Add dynamic filters (optional for later)
+      selectedFilters.forEach((key, value) {
+        if (value != null && value.toString().isNotEmpty) {
+          queryParams += "&$key=$value";
+        }
+      });
+
+      print("🔍 Request URL: $queryParams&");
+
+      final raw = await ApiService().getRequest("$queryParams&");
+
       final List<Map<String, dynamic>> items =
-          List<Map<String, dynamic>>.from(raw);
+          List<Map<String, dynamic>>.from(raw["data"]);
 
-      // If first page, replace; else append
+      final Map<String, dynamic> metaData = raw['meta'];
+      currentPage.value = metaData['page'];
+      pageSize.value = metaData["perPage"] ?? metaData["limit"];
+      totalPages.value = metaData["totalPages"];
+      _hasMoreServerPages = metaData["hasNextPage"];
+      _hasPreviousPages = metaData["hasPrevPage"];
+
+      final currentUserId = Strings.userId;
+      for (var i = 0; i < items.length; i++) {
+        final item = Map<String, dynamic>.from(items[i]);
+        final canEdit = isEditAllowed(item, editAllowed, currentUserId);
+        item['editAllowed'] = canEdit;
+        items[i] = item;
+      }
+
       if (page == 1) {
+        _lastServerPageFetched = 1;
         dataList.value = items;
       } else {
+        _lastServerPageFetched = metaData["prevPage"] ?? 1;
         dataList.addAll(items);
       }
 
-      _lastServerPageFetched = page;
-      // If received less than pageSize, no more pages
-      if (items.length < pageSize.value) {
-        _hasMoreServerPages = false;
-      }
-
-      // If server provides total count in headers or response, set totalItems and totalPages here.
-      // totalItems.value = someValueFromResponse;
-      // totalPages.value = (totalItems.value / pageSize.value).ceil();
-
-      // For server-mode here, treat filteredList as same as dataList (server should ideally return already filtered set)
       filteredList.value = List<Map<String, dynamic>>.from(dataList);
-      // Finally apply pagination UI slice
       _updatePaginationMetaAndSlice();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print("❌ ERROR: $e");
+      print("📌 STACK TRACE:\n$stackTrace");
+
       Get.snackbar(
-        "Error",
+        "Error cause here",
         e.toString(),
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade700,
         colorText: Colors.white,
         margin: const EdgeInsets.all(12),
-        duration: const Duration(seconds: 3),
+        duration: Duration(seconds: 3),
       );
     } finally {
       isLoading.value = false;
@@ -281,34 +242,27 @@ class DynamicModuleController extends GetxController {
   void applyFilters() {
     var tempList = List<Map<String, dynamic>>.from(dataList);
 
-    // tempList = tempList.where((e) {
-    //   // show everything if "all" OR not selected yet
-    //   if (selectedProject.value == null || selectedProject.value == "all") {
-    //     return true;
-    //   }
-    //   return e["project"]["_id"] == selectedProject.value;
-    // }).toList();
     if (selectedFilters.isNotEmpty) {
       tempList =
           applyDynamicFilters(dataList: dataList, filters: selectedFilters);
     }
 
     // Tab filter (if tabBased)
-    if (config['type'] == 'tabBased') {
-      final tabs = List<String>.from(config['tabs'] ?? []);
-      final selectedTab = tabs[selectedTabIndex.value];
+    // if (config['type'] == 'tabBased') {
+    //   final tabs = List<String>.from(config['tabs'] ?? []);
+    //   final selectedTab = tabs[selectedTabIndex.value];
 
-      final tabFilters = (config['tabFilters'] ?? {})[selectedTab];
+    //   final tabFilters = (config['tabFilters'] ?? {})[selectedTab];
 
-      if (tabFilters != null) {
-        tabFilters.forEach((key, value) {
-          tempList = tempList.where((item) {
-            final fieldValue = item[key];
-            return fieldValue == value;
-          }).toList();
-        });
-      }
-    }
+    //   if (tabFilters != null) {
+    //     tabFilters.forEach((key, value) {
+    //       tempList = tempList.where((item) {
+    //         final fieldValue = item[key];
+    //         return fieldValue == value;
+    //       }).toList();
+    //     });
+    //   }
+    // }
 
     // Search filter
     if (searchQuery.value.isNotEmpty) {
@@ -397,15 +351,12 @@ class DynamicModuleController extends GetxController {
 
       // Date filtering
       if (matches && (fromDate != null || toDate != null)) {
-        print("Entered Date Filter.............");
         final itemDate = DateTime.tryParse(item["date"] ?? item["createdAt"]);
         print("$fromDate-----$itemDate-----$toDate");
         if (itemDate == null) return false;
         if (fromDate != null && itemDate.isBefore(fromDate)) matches = false;
         if (toDate != null && itemDate.isAfter(toDate)) matches = false;
-      } else {
-        print("----Didnt enter date filter $fromDate-----$toDate");
-      }
+      } else {}
 
       return matches;
     }).toList();
@@ -416,11 +367,11 @@ class DynamicModuleController extends GetxController {
   // ---------------- Pagination helpers ----------------
 
   void _updatePaginationMetaAndSlice() {
-    final int total = filteredList.length;
+    selectedTabIndex.value = 0;
+    final int total = totalItems.value;
     totalItems.value = total;
 
-    totalPages.value =
-        total == 0 ? 1 : ((total + pageSize.value - 1) ~/ pageSize.value);
+    totalPages.value = totalPages.value;
 
     // Clamp currentPage
     if (currentPage.value < 1) currentPage.value = 1;
@@ -442,7 +393,10 @@ class DynamicModuleController extends GetxController {
   void setPageSize(int size, {bool resetToFirstPage = true}) {
     if (size <= 0) return;
     pageSize.value = size;
+    currentPage.value = 1;
+    _fetchServerPage(1);
     if (resetToFirstPage) currentPage.value = 1;
+
     _updatePaginationMetaAndSlice();
   }
 
@@ -456,12 +410,14 @@ class DynamicModuleController extends GetxController {
     if (paginationMode == 'server' &&
         page > _lastServerPageFetched &&
         _hasMoreServerPages) {
+      print("fetching data..................");
       _fetchServerPage(page);
     }
   }
 
   void nextPage() {
     if (currentPage.value >= totalPages.value) return;
+
     currentPage.value++;
     _updatePaginationMetaAndSlice();
 
@@ -515,15 +471,58 @@ class DynamicModuleController extends GetxController {
     applyFilters();
   }
 
-  void changeTab(int index) {
+  void changeTab(int index) async {
     selectedTabIndex.value = index;
-    applyFilters();
+    await fetchData(resetPagination: true);
   }
 
-  updateStatus(String id, String status) async {
-    await ApiService().updateData("uauc", id, {"status": status});
-    print("Status Changed;;;;;;;;;;;;;;;;;;;;;;; $status");
+  updateStatus(String id, Map<String, dynamic> changedData) async {
+    await ApiService().updateData(moduleName, id, changedData);
+    print("Status Changed;;;;;;;;;;;;;;;;;;;;;;;");
+
     // After update, refresh current data. For server pagination you might only want to refresh current page.
     fetchData();
+  }
+
+  bool isEditAllowed(
+    Map<String, dynamic> item,
+    List<String> editableFields,
+    String currentUserId,
+  ) {
+    bool fieldMatchesCurrentUser(dynamic fieldObj) {
+      if (fieldObj == null) return false;
+
+      if (fieldObj is String) {
+        return fieldObj == currentUserId;
+      }
+
+      if (fieldObj is Map<String, dynamic>) {
+        final fObjId = fieldObj['_id']?.toString();
+        final fUserId = fieldObj['userId']?.toString();
+
+        if (currentUserId.isNotEmpty &&
+            (fUserId == currentUserId || fObjId == currentUserId)) {
+          return true;
+        }
+        return false;
+      }
+
+      if (fieldObj is List) {
+        for (final e in fieldObj) {
+          if (fieldMatchesCurrentUser(e)) return true;
+        }
+      }
+
+      return false;
+    }
+
+    for (final fieldName in editableFields) {
+      if (!item.containsKey(fieldName)) continue;
+
+      final fieldValue = item[fieldName];
+      if (fieldMatchesCurrentUser(fieldValue)) return true;
+    }
+
+    return false;
   }
 }

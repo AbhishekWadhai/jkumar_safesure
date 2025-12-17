@@ -4,9 +4,8 @@ import 'package:get/get.dart';
 import 'package:sure_safe/app_constants/app_strings.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
+import 'package:sure_safe/views/additional_views/browser_view.dart';
 import 'package:sure_safe/views/additional_views/image_view_page.dart';
-
-import '../../views/additional_views/browser_view.dart';
 
 Widget buildFilePicker(
   PageField field,
@@ -14,31 +13,6 @@ Widget buildFilePicker(
   DynamicFormController controller,
   bool isEdit,
 ) {
-  String _getExtension(String url) {
-    try {
-      final uri = Uri.parse(url);
-      final path = uri.path;
-      if (!path.contains('.')) return '';
-      return path.split('.').last;
-    } catch (_) {
-      return '';
-    }
-  }
-
-  bool checkImageUrl(String originalUrl) {
-    // final encoded = Uri.encodeFull(originalUrl);
-    final ext = _getExtension(originalUrl).toLowerCase();
-
-    const imageExts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'};
-
-    if (imageExts.contains(ext)) {
-      // return original so WebView/Image can load the raw image
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   return Obx(() {
     // currently selected (pending/new) files in the UI
     final List<Map<String, dynamic>> selectedFiles =
@@ -120,7 +94,7 @@ Widget buildFilePicker(
                     final mergedUrls = <String>[];
                     mergedUrls.addAll(uploadedUrls);
                     mergedUrls.addAll(newUrls);
-                    controller.formData[field.headers] = mergedUrls;
+                    controller.formData[field.headers]?.value = mergedUrls;
                   }
                 }
               : null,
@@ -146,14 +120,34 @@ Widget buildFilePicker(
               ),
               subtitle: Text(url, maxLines: 1, overflow: TextOverflow.ellipsis),
               onTap: () {
-                // open http(s) urls in BrowserView; otherwise open with ImageViewPage
-                if (checkImageUrl(url)) {
-                  Get.bottomSheet(
-                      SizedBox(
-                          height: 700, child: ImageViewPage(imageUrl: url)),
-                      isScrollControlled: true);
-                } else {
+                // file extension in lowercase
+                final extension = url.split('.').last.toLowerCase();
+
+                // list of common image extensions
+                const imageExtensions = [
+                  'jpg',
+                  'jpeg',
+                  'png',
+                  'gif',
+                  'bmp',
+                  'webp'
+                ];
+
+                // list of common document extensions
+                var docExtensions = Strings.fileTypes;
+
+                if (imageExtensions.contains(extension)) {
+                  // Open image in ImageViewPage
+                  Get.to(() => ImageViewPage(imageUrl: url));
+                } else if (docExtensions.contains(extension)) {
+                  // Open document in browser
                   Get.to(() => BrowserBottomSheetLauncher(url: url));
+                } else if (url.startsWith('http')) {
+                  // Default case: open in browser if it's a web link
+                  Get.to(() => BrowserBottomSheetLauncher(url: url));
+                } else {
+                  // fallback
+                  Get.snackbar("Unsupported", "File type not supported");
                 }
               },
               trailing: isEditable
@@ -163,7 +157,7 @@ Widget buildFilePicker(
                         // remove this url from formData
                         final remaining = List<String>.from(uploadedUrls)
                           ..remove(url);
-                        controller.formData[field.headers] = remaining;
+                        controller.formData[field.headers]?.value = remaining;
                       },
                     )
                   : null,

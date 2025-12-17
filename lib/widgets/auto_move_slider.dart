@@ -8,7 +8,6 @@ import 'package:sure_safe/app_constants/colors.dart';
 import 'package:sure_safe/helpers/custom_card.dart';
 import 'package:sure_safe/routes/routes_string.dart';
 
-
 class AutoCarousel extends StatefulWidget {
   final DateTimeRange selectedRange;
 
@@ -46,9 +45,9 @@ class _AutoCarouselState extends State<AutoCarousel> {
         ),
         CardFb2(
           totalNo: uaucCount.toString(),
-          text: 'UA UC',
+          text: 'Observation',
           imageUrl: Assets.workPermit,
-          subtitle: 'Reported incidents',
+          subtitle: 'Reported observation',
           onPressed: () => Get.toNamed(Routes.userDetailsDataPage),
         ),
         CardFb2(

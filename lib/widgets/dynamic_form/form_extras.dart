@@ -4,11 +4,29 @@ import 'package:sure_safe/app_constants/app_strings.dart';
 import 'package:sure_safe/controllers/dynamic_form_contoller.dart';
 import 'package:sure_safe/model/form_data_model.dart';
 
-
 Obx buildSwitch(
     PageField field, DynamicFormController controller, bool isEditable) {
+  // Ensure observable exists
+  controller.formData.putIfAbsent(field.headers, () => Rx<bool>(false));
+
   return Obx(() {
-    final bool isSwitched = controller.formData[field.headers] == true;
+    // Access the current value reactively
+    final bool isSwitched = controller.formData[field.headers]!.value as bool;
+
+    // Determine if the switch should be editable
+    final bool switchEditable = isEditable &&
+        (
+            // CASE 1: List → check if current user exists in list
+            (controller.formData[field.endpoint] is List &&
+                    (controller.formData[field.endpoint] as List).any((item) {
+                      if (item is String) return item == Strings.userName;
+                      if (item is Map<String, dynamic>)
+                        return item.containsValue(Strings.userName);
+                      return false;
+                    })) ||
+                // CASE 2: Bool → Treat true as allowed, false as not
+                (controller.formData[field.endpoint] is bool &&
+                    controller.formData[field.endpoint] == true));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -21,22 +39,13 @@ Obx buildSwitch(
         SwitchListTile(
           title: Text(field.title),
           value: isSwitched,
-          onChanged: isEditable &&
-                  controller.formData[field.endpoint] != null &&
-                  (controller.formData[field.endpoint] as List).any((item) {
-                    if (item is String) {
-                      return item == Strings.userName;
-                    } else if (item is Map<String, dynamic>) {
-                      return item.containsValue(Strings.userName);
-                    }
-                    return false; // For any unexpected type, return false.
-                  })
+          onChanged: switchEditable
               ? (bool newValue) {
-                  controller.updateSwitchSelection(field.headers, newValue);
+                  controller.formData[field.headers]!.value = newValue;
+                  // Optionally, you can call a controller helper:
+                  // controller.updateSwitchSelection(field.headers, newValue);
                 }
-              : null,
-          // Disable onChanged if not editable
-          // Optionally, change the appearance of the disabled switch
+              : null, // Disable if not editable
           activeColor: isEditable ? null : Colors.grey,
           inactiveThumbColor: isEditable ? null : Colors.grey,
           inactiveTrackColor: isEditable ? null : Colors.grey[300],
