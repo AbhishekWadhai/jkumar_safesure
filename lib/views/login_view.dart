@@ -4,6 +4,7 @@ import 'package:sure_safe/app_constants/asset_path.dart';
 
 import 'package:sure_safe/app_constants/colors.dart';
 import 'package:sure_safe/controllers/login_controller.dart';
+import 'package:sure_safe/helpers/sixed_boxes.dart';
 import 'package:sure_safe/widgets/progress_indicators.dart';
 
 import '../widgets/custom_textfield.dart';
@@ -16,105 +17,106 @@ class LoginView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SafeArea(
         child: SingleChildScrollView(
           child: SizedBox(
-            height: MediaQuery.of(context).size.height,
             child: Stack(
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      Assets.jKumarLogoBlack,
-                      width: 100,
-                    ),
-                    const SizedBox(height: 20.0),
-                    const Text(
-                      "SAFETY SURE",
-                      style:
-                          TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                    ),
-                  
-                    
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    const Text(
-                      "Login to Continue...",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(height: 20.0),
-                    Form(
-                      key: loginController.formKey,
-                      child: Column(
-                        children: <Widget>[
-                          CustomTextField(
-                            fieldName: 'Username',
-                            controller: loginController.usernameController,
-                            labelText: 'Enter Username',
-                            validator: loginController.validateUsername,
-                          ),
-                          const SizedBox(height: 20),
-                          Obx(() => CustomTextField(
-                                fieldName: 'Password',
-                                controller: loginController.passwordController,
-                                labelText: 'Enter Password',
-                                isPassword: true,
-                                obscureText:
-                                    loginController.isPasswordHidden.value,
-                                onTogglePassword: () {
-                                  loginController.isPasswordHidden.toggle();
-                                },
-                                validator: loginController.validatePassword,
-                              )),
-                          const SizedBox(height: 20),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: GestureDetector(
-                                onTap: () {
-                                  print("clicked forget password");
-                                  //Get.dialog(ForgotPasswordDialog());
-                                },
-                                child: Text(
-                                  "Forgot Password ?",
-                                  style: TextStyle(color: AppColors.appMainMid),
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      sb40,
+                      Image.asset(
+                        Assets.jKumarLogoBlack,
+                        width: 100,
+                      ),
+                      const SizedBox(height: 20.0),
+                      const Text(
+                        "SAFETY SURE",
+                        style:
+                            TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      const Text(
+                        "Login to Continue...",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Form(
+                        key: loginController.formKey,
+                        child: Column(
+                          children: <Widget>[
+                            CustomTextField(
+                              fieldName: 'Username',
+                              controller: loginController.usernameController,
+                              labelText: 'Enter Username',
+                              validator: loginController.validateUsername,
+                            ),
+                            const SizedBox(height: 20),
+                            Obx(() => CustomTextField(
+                                  fieldName: 'Password',
+                                  controller: loginController.passwordController,
+                                  labelText: 'Enter Password',
+                                  isPassword: true,
+                                  obscureText:
+                                      loginController.isPasswordHidden.value,
+                                  onTogglePassword: () {
+                                    loginController.isPasswordHidden.toggle();
+                                  },
+                                  validator: loginController.validatePassword,
                                 )),
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.8,
-                            height: 50,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.appMainDark),
-                              onPressed: loginController.handleLogin,
-                              child: const Text(
-                                'Login',
-                                style: TextStyle(),
+                            const SizedBox(height: 20),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: GestureDetector(
+                                  onTap: () {
+                                    print("clicked forget password");
+                                    //Get.dialog(ForgotPasswordDialog());
+                                  },
+                                  child: Text(
+                                    "Forgot Password ?",
+                                    style: TextStyle(color: AppColors.appMainMid),
+                                  )),
+                            ),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              height: 50,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.appMainDark),
+                                onPressed: loginController.handleLogin,
+                                child: const Text(
+                                  'Login',
+                                  style: TextStyle(),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    const Text(
-                      "By clicking continue, you agree to our Terms of Service and Privacy Policy.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ],
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      const Text(
+                        "By clicking continue, you agree to our Terms of Service and Privacy Policy.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
                 ),
                 Obx(() {
                   return loginController.isLoading.value
                       ? Container(
+                          height: MediaQuery.of(context).size.height,
                           color: Colors.grey.withOpacity(0.5),
                           child: const Center(
-                            child: RohanProgressIndicator(),
+                            child: CustomProgressIndicator(),
                           ),
                         )
                       : const SizedBox.shrink();

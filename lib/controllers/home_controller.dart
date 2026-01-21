@@ -63,7 +63,7 @@ class HomeController extends GetxController {
 
     // Show loading dialog
     Get.dialog(
-      Center(child: RohanProgressIndicator()),
+      Center(child: CustomProgressIndicator()),
       barrierDismissible: false,
     );
 

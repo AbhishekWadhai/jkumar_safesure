@@ -188,6 +188,7 @@ class HomeView extends StatelessWidget {
                       sb6,
                       const Divider(color: Colors.black87),
                       sb6,
+
                       // Container(
                       //   height: 250,
                       //   decoration: BoxDecoration(
@@ -202,6 +203,13 @@ class HomeView extends StatelessWidget {
                   ),
                 ),
               ),
+              SliverFillRemaining(
+                hasScrollBody: false,
+                fillOverscroll: true,
+                child: Container(
+                  color: Colors.white,
+                ),
+              )
             ],
           );
         }),
@@ -462,8 +470,11 @@ class AppBarContent extends StatelessWidget {
                         color: Colors.transparent,
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                       ),
-                      padding: const EdgeInsets.all(
-                          8.0), // Adds spacing inside the container
+                      padding: const EdgeInsets.only(
+                          top: 0.0,
+                          left: 8,
+                          right: 8,
+                          bottom: 1), // Adds spacing inside the container
                       child: Column(
                         children: [
                           GridView(

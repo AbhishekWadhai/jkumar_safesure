@@ -51,6 +51,8 @@ dependencies:
   custom_refresh_indicator: ^4.0.1
   webview_flutter: ^4.13.0
   image: ^4.5.4
+  flutter_launcher_icons: ^0.14.4
+  image_gallery_saver_plus: ^4.0.1
   
 
 dev_dependencies:
@@ -79,15 +81,22 @@ flutter:
   
 flutter_native_splash:
   color: "#ffffff" # Background color of the splash screen (use a hex color code or color name)
-  image: assets/logo_jkumar_dark.png # Path to the splash image file
+  image: lib/assets/j_kumar_splash.png # Path to the splash image file
   #fill: false Whether to stretch the image to fill the screen
   android: true # Enable splash screen for Android
   ios: true # Enable splash screen for iOS
   android_gravity: center # Aligns the image in the center of the screen
   ios_content_mode: scaleAspectFill # Ensures the image scales proportionally on iOS
+
+  android_12:
+    color: "#ffffff"
+    image: lib/assets/j_kumar_splash.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
-
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "lib/assets/logo_jkumar_dark_square.png"
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 

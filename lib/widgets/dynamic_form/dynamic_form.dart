@@ -85,7 +85,7 @@ class _DynamicFormState extends State<DynamicForm> {
               ? Container(
                   color: Colors.grey.withOpacity(0.3),
                   child: const Center(
-                    child: RohanProgressIndicator(),
+                    child: CustomProgressIndicator(),
                   ),
                 )
               : SizedBox.shrink(),

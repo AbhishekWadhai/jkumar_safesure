@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sure_safe/app_constants/asset_path.dart';
 
-class RohanProgressIndicator extends StatelessWidget {
-  const RohanProgressIndicator({
+class CustomProgressIndicator extends StatelessWidget {
+  const CustomProgressIndicator({
     super.key,
   });
 

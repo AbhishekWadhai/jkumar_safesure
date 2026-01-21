@@ -319,7 +319,7 @@ class SubFormController extends GetxController {
     try {
       Get.dialog(
         const Center(
-          child: RohanProgressIndicator(),
+          child: CustomProgressIndicator(),
         ),
         barrierDismissible: false, // Prevent dismissing the dialog
       );

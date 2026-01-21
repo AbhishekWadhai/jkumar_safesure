@@ -5,11 +5,13 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 //import 'package:image/image.dart' as img_pkg;
 import 'package:camera/camera.dart';
+import 'package:intl/intl.dart';
 
 import 'package:path/path.dart'; // For handling file paths
 import 'package:path_provider/path_provider.dart';
@@ -174,160 +176,360 @@ class CameraService with ChangeNotifier {
   CameraController get controller => _controller;
 }
 
+// class CameraPreviewScreen extends StatefulWidget {
+//   @override
+//   _CameraPreviewScreenState createState() => _CameraPreviewScreenState();
+// }
+
+// class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
+//   late CameraService _cameraService;
+//   bool _isCameraInitialized = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _cameraService = CameraService();
+//     _initializeCamera();
+//   }
+
+//   Future<void> _initializeCamera() async {
+//     try {
+//       await _cameraService.initializeCamera();
+//       setState(() {
+//         _isCameraInitialized = true;
+//       });
+//     } catch (e) {
+//       print('Error initializing camera: $e');
+//     }
+//   }
+
+//   Future<void> _captureImage() async {
+//     try {
+//       final image = await _cameraService.captureImage();
+//       if (image != null) {
+//         // Return the captured image to the calling function
+//         Get.back(result: image);
+//       }
+//     } catch (e) {
+//       print('Error capturing image: $e');
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: _isCameraInitialized
+//           ? Stack(
+//               children: [
+//                 SafeArea(
+//                   child: CameraPreview(_cameraService.controller),
+//                 ),
+
+//                 // 🔁 Switch Camera Button (Top Right)
+//                 // Positioned(
+//                 //   top: 20,
+//                 //   right: 20,
+//                 //   child:
+//                 // ),
+
+//                 // 📸 Capture Button
+//                 Align(
+//                   alignment: Alignment.bottomCenter,
+//                   child: Padding(
+//                     padding: const EdgeInsets.all(20.0),
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//                       children: [
+//                         FloatingActionButton(
+//                           onPressed: _captureImage,
+//                           backgroundColor: Colors.red,
+//                           child: const Icon(Icons.camera_alt),
+//                         ),
+//                         FloatingActionButton(
+//                           heroTag: 'switchCam',
+//                           backgroundColor: Colors.black54,
+//                           onPressed: () async {
+//                             await _cameraService.switchCamera();
+//                             setState(() {});
+//                           },
+//                           child: const Icon(Icons.cameraswitch),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             )
+//           : Center(child: CircularProgressIndicator()),
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     _cameraService.dispose();
+//     super.dispose();
+//   }
+// }
+
+// Future<File?> renderWidgetToFileUsingNavigatorKey(Widget widget,
+//     {double pixelRatio = 3.0}) async {
+//   final navState = navigatorKey.currentState;
+//   final overlay = navState?.overlay;
+//   if (overlay == null) {
+//     // Not ready yet — either app not mounted or navigatorKey not attached.
+//     print('No overlay available (navigatorKey.currentState?.overlay == null)');
+//     return null;
+//   }
+
+//   final key = GlobalKey();
+//   final entry = OverlayEntry(
+//     builder: (context) {
+//       return Offstage(
+//         offstage: false, // must not be true; we need it laid out & painted
+//         child: Material(
+//           type: MaterialType.transparency,
+//           child: Center(
+//             child: RepaintBoundary(
+//               key: key,
+//               child: widget,
+//             ),
+//           ),
+//         ),
+//       );
+//     },
+//   );
+
+//   overlay.insert(entry);
+
+//   // Wait for at least one frame so the widget is built & painted.
+//   // A small delay + endOfFrame tends to be robust.
+//   await Future.delayed(const Duration(milliseconds: 50));
+//   await WidgetsBinding.instance.endOfFrame;
+//   await Future.delayed(const Duration(milliseconds: 50));
+
+//   try {
+//     final boundary =
+//         key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+//     if (boundary == null) {
+//       print('RenderRepaintBoundary not found');
+//       return null;
+//     }
+
+//     final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+//     final ByteData? byteData =
+//         await image.toByteData(format: ui.ImageByteFormat.png);
+//     if (byteData == null) return null;
+//     final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+//     final dir = await getTemporaryDirectory();
+//     final file = File(
+//         '${dir.path}/composed_${DateTime.now().millisecondsSinceEpoch}.png');
+//     await file.writeAsBytes(pngBytes);
+//     return file;
+//   } catch (e, st) {
+//     print('capture error: $e\n$st');
+//     return null;
+//   } finally {
+//     entry.remove();
+//   }
+// }
+
 class CameraPreviewScreen extends StatefulWidget {
+  const CameraPreviewScreen({super.key});
+
   @override
-  _CameraPreviewScreenState createState() => _CameraPreviewScreenState();
+  State<CameraPreviewScreen> createState() => _CameraPreviewScreenState();
 }
 
 class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
-  late CameraService _cameraService;
-  bool _isCameraInitialized = false;
+  late CameraController _controller;
+  late List<CameraDescription> _cameras;
+
+  bool _initialized = false;
+  Position? _position;
+  String _address = "Fetching location...";
+
+  final GlobalKey _repaintKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _cameraService = CameraService();
-    _initializeCamera();
+    _initEverything();
   }
 
-  Future<void> _initializeCamera() async {
+  Future<void> _initEverything() async {
+    _cameras = await availableCameras();
+    _controller = CameraController(
+      _cameras.first,
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+
+    await _controller.initialize();
+
+    _position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    await _getAddressFromLatLng();
+
+    setState(() {
+      _initialized = true;
+    });
+  }
+
+  Future<void> _getAddressFromLatLng() async {
     try {
-      await _cameraService.initializeCamera();
-      setState(() {
-        _isCameraInitialized = true;
-      });
+      final placemarks = await placemarkFromCoordinates(
+        _position!.latitude,
+        _position!.longitude,
+      );
+
+      final place = placemarks.first;
+      _address =
+          "${place.street}, ${place.subLocality}, ${place.locality}, ${place.administrativeArea}";
     } catch (e) {
-      print('Error initializing camera: $e');
+      _address = "Address unavailable";
     }
   }
 
-  Future<void> _captureImage() async {
+  Future<void> _captureStampedImage() async {
     try {
-      final image = await _cameraService.captureImage();
-      if (image != null) {
-        // Return the captured image to the calling function
-        Get.back(result: image);
-      }
+      final boundary = _repaintKey.currentContext!.findRenderObject()
+          as RenderRepaintBoundary;
+
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+      final Uint8List bytes = byteData!.buffer.asUint8List();
+
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/stamped_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+
+      await file.writeAsBytes(bytes);
+
+      Get.back(result: file);
     } catch (e) {
-      print('Error capturing image: $e');
+      debugPrint("Capture failed: $e");
     }
+  }
+
+  Widget _overlayWidget() {
+    final now = DateTime.now();
+    final formattedDate = DateFormat('dd MMM, yyyy').format(now);
+    final formattedTime = DateFormat('HH:mm').format(now);
+
+    return Positioned(
+      bottom: 16,
+      right: 16,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 260, // 🔥 prevents layout expansion
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.65),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // 🔥 important
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "$formattedDate, $formattedTime",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$_address (${_position!.latitude.toStringAsFixed(5)}, "
+                  "${_position!.longitude.toStringAsFixed(5)})",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                  maxLines: 3, // 🔥 prevents vertical stretch
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_initialized || _position == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    Widget cameraPreview() {
+      final size = MediaQuery.of(context).size;
+      final cameraRatio = _controller.value.aspectRatio;
+
+      // Android camera sensor is landscape
+      final isPortrait = size.height > size.width;
+      final previewRatio = isPortrait ? (1 / cameraRatio) : cameraRatio;
+
+      return Center(
+        child: OverflowBox(
+          maxWidth: size.width,
+          maxHeight: size.height,
+          child: FittedBox(
+            fit: BoxFit.cover, // 🔥 fill screen, crop excess
+            child: SizedBox(
+              width: size.width,
+              height: size.width / previewRatio,
+              child: Stack(
+                children: [
+                  CameraPreview(_controller),
+                  _overlayWidget(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: _isCameraInitialized
-          ? Stack(
-              children: [
-                SafeArea(
-                  child: CameraPreview(_cameraService.controller),
-                ),
-
-                // 🔁 Switch Camera Button (Top Right)
-                // Positioned(
-                //   top: 20,
-                //   right: 20,
-                //   child:
-                // ),
-
-                // 📸 Capture Button
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        FloatingActionButton(
-                          onPressed: _captureImage,
-                          backgroundColor: Colors.red,
-                          child: const Icon(Icons.camera_alt),
-                        ),
-                        FloatingActionButton(
-                          heroTag: 'switchCam',
-                          backgroundColor: Colors.black54,
-                          onPressed: () async {
-                            await _cameraService.switchCamera();
-                            setState(() {});
-                          },
-                          child: const Icon(Icons.cameraswitch),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : Center(child: CircularProgressIndicator()),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          RepaintBoundary(
+            key: _repaintKey,
+            child: cameraPreview(),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: FloatingActionButton(
+                backgroundColor: Colors.red,
+                onPressed: _captureStampedImage,
+                child: const Icon(Icons.camera_alt),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   void dispose() {
-    _cameraService.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-}
-
-Future<File?> renderWidgetToFileUsingNavigatorKey(Widget widget,
-    {double pixelRatio = 3.0}) async {
-  final navState = navigatorKey.currentState;
-  final overlay = navState?.overlay;
-  if (overlay == null) {
-    // Not ready yet — either app not mounted or navigatorKey not attached.
-    print('No overlay available (navigatorKey.currentState?.overlay == null)');
-    return null;
-  }
-
-  final key = GlobalKey();
-  final entry = OverlayEntry(
-    builder: (context) {
-      return Offstage(
-        offstage: false, // must not be true; we need it laid out & painted
-        child: Material(
-          type: MaterialType.transparency,
-          child: Center(
-            child: RepaintBoundary(
-              key: key,
-              child: widget,
-            ),
-          ),
-        ),
-      );
-    },
-  );
-
-  overlay.insert(entry);
-
-  // Wait for at least one frame so the widget is built & painted.
-  // A small delay + endOfFrame tends to be robust.
-  await Future.delayed(const Duration(milliseconds: 50));
-  await WidgetsBinding.instance.endOfFrame;
-  await Future.delayed(const Duration(milliseconds: 50));
-
-  try {
-    final boundary =
-        key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary == null) {
-      print('RenderRepaintBoundary not found');
-      return null;
-    }
-
-    final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-    final ByteData? byteData =
-        await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData == null) return null;
-    final Uint8List pngBytes = byteData.buffer.asUint8List();
-
-    final dir = await getTemporaryDirectory();
-    final file = File(
-        '${dir.path}/composed_${DateTime.now().millisecondsSinceEpoch}.png');
-    await file.writeAsBytes(pngBytes);
-    return file;
-  } catch (e, st) {
-    print('capture error: $e\n$st');
-    return null;
-  } finally {
-    entry.remove();
   }
 }
